@@ -63,7 +63,7 @@ struct MCUver
 *   Mesh Opcodes
 **********************************************************************************************************************************/
 
-#define MESH_MODEL_ID_LL      0x1301                            // Light Lightness Model ID
+#define MESH_MODEL_ID_LL      0x1300                            // Light Lightness Model ID
 #define MESH_MESSAGE_SET_LL     0x824C                            // LL set message
 #define MESH_MESSAGE_STATUS_LL    0x824E                            // LL staus message
 #define MESH_MESSAGE_GET_LL     0x824B                            // LL get message
