@@ -2,11 +2,14 @@
 ##  Required software:
 - Arduino IDE 1.8.5
 - Teensyduino plugin 1.40
+- Newliquidcrystal 1.3.5 https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/Newliquidcrystal_1.3.5.zip
 
 ## Step by step setup instuctions:
 - Install Arduino IDE 1.8.5
 - Install Teensyduino plugin 1.40
 - Open sketch file in Arduino IDE
+- Download Newliquidcrystal
+- Add Newliquidcrystal library: Sketch -> Include library -> Add .zip library
 - Select Board: Tools -> Board -> Teensy LC
 - Select Tools -> USB Type -> Serial
 - Select serial port: Tools -> Port -> COMx (/dev/ttyACMx for Linux)

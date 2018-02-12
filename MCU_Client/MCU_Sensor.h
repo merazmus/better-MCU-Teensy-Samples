@@ -19,41 +19,57 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef UART_H_
-#define UART_H_
+#ifndef MCU_SENSOR_H
+#define MCU_SENSOR_H
 
 /********************************************
  * INCLUDES                                 *
  ********************************************/
 
-#include "stdint.h"
-
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
-
-/**< Defines maximum data length in frame */
-#define MAX_PAYLOAD_SIZE      127
+#include <stdint.h>
 
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
  ********************************************/
 
-void UART_Init(void);
-void UART_SendPingRequest(void);
-void UART_SendPongResponse(void);
-void UART_SendSoftwareResetRequest(void);
-void UART_SendCreateInstancesRequest(uint8_t * model_id, uint8_t len);
-void UART_SendMeshMessageRequest(uint8_t * payload, uint8_t len);
-void UART_StartNodeRequest(void);
-void UART_ProcessIncomingCommand(void);
+/*
+ *  Set Sensor Client instance index
+ *
+ *  @param idx  Lightness value
+ */
+void SetInstanceIdxSensor(uint8_t idx);
 
-extern void ProcessEnterInitDevice(uint8_t * payload, uint8_t len);
-extern void ProcessEnterDevice(uint8_t * payload, uint8_t len);
-extern void ProcessEnterInitNode(uint8_t * payload, uint8_t len);
-extern void ProcessEnterNode(uint8_t * payload, uint8_t len);
-extern void ProcessMeshCommand(uint8_t * payload, uint8_t len);
-extern void ProcessAttention(uint8_t * payload, uint8_t len);
-extern void ProcessError(uint8_t * payload, uint8_t len);
+/*
+ *  Get Sensor Client instance index
+ *
+ *  @return     Lightness value
+ */
+uint8_t GetInstanceIdxSensor(void);
 
-#endif
+/*
+ *  Process ALS value update
+ *
+ *  @param src_addr     Source address
+ *  @param value        New sensor value
+ */
+void ProcessPresentAmbientLightLevel(uint16_t src_addr, float value);
+
+/*
+ *  Process PIR value update
+ *
+ *  @param src_addr     Source address
+ *  @param value        New sensor value
+ */
+void ProcessPresenceDetected(uint16_t src_addr, bool value);
+
+/*
+ *  Setup sensor server hardware
+ */
+void SetupSensor(void);
+
+/*
+ *  Sensor server main function, should be called in Arduino main loop
+ */
+void LoopSensor(void);
+
+#endif  // MCU_SENSOR_H

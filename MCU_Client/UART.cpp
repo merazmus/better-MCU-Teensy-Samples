@@ -23,18 +23,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * INCLUDES                                 *
  ********************************************/
 
-#include "Arduino.h"
 #include "UART.h"
-#include "Common.h"
+#include "Arduino.h"
+#include "Config.h"
 
 /********************************************
  * LOCAL #define CONSTANTS AND MACROS       *
  ********************************************/
-
-/**< Defines serial port to communicate with modem */
-#define UART_INTERFACE                      (Serial2)
-/**< Defines baudrate of modem interface */
-#define UART_INTERFACE_BAUDRATE             57600
 
 /**< UART Command Codes definitions */
 #define UART_CMD_PING_REQUEST               0x01u
@@ -60,6 +55,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define UART_CMD_SOFTWARE_RESET_REQUEST     0x17u
 #define UART_CMD_SOFTWARE_RESET_RESPONSE    0x18u
 #define UART_CMD_SENSOR_UPDATE_RESPONSE     0x19u
+#define UART_CMD_DEVICE_UUID_REQUEST        0x1Au
+#define UART_CMD_DEVICE_UUID_RESONSE        0x1Bu
+
 
 /**< CRC configuration */
 #define CRC_POLYNOMIAL                      0x8005u
@@ -78,6 +76,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define CRC_BYTE_1_OFFSET(len)              (PAYLOAD_OFFSET+(len))
 #define CRC_BYTE_2_OFFSET(len)              (PAYLOAD_OFFSET+(len)+1)
 
+/** @brief Counts number of elements inside the array. */
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 /********************************************
  * EXPORTED TYPES DEFINITIONS               *
  ********************************************/
@@ -86,17 +87,56 @@ struct RxFrame_t
 {
   uint8_t len;
   uint8_t cmd;
-  uint8_t payload[MAX_PAYLOAD_SIZE];
+  uint8_t p_payload[MAX_PAYLOAD_SIZE];
 };
 
 /********************************************
  * LOCAL FUNCTIONS PROTOTYPES               *
  ********************************************/
 
+/*
+ *  Received data from UART
+ *
+ *  @param rx_frame    Pointer to frame to be filled with received data
+ *  @return            True if frame's CRC is valid, false otherwise
+ */
 static bool UARTInternal_Receive(RxFrame_t * rx_frame);
-static void UARTInternal_Send(uint8_t len, uint8_t cmd, uint8_t *payload);
-static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t *buf, uint16_t crc);
-static uint16_t CalcCRC16(uint8_t len, uint8_t cmd, uint8_t* data);
+
+/*
+ *  Send message over UART
+ *
+ *  @param len        Message length
+ *  @param cmd        Message command
+ *  @param p_payload  Message payload
+ */
+static void UARTInternal_Send(uint8_t len, uint8_t cmd, uint8_t * p_payload);
+
+/*
+ *  Print debug message
+ *
+ *  @param *dir    Direction description
+ *  @param len     Command length
+ *  @param cmd     Command code
+ *  @param *buf    Pointer to message
+ *  @param crc     CRC
+ */
+static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t * buf, uint16_t crc);
+
+/*
+ *  Calc CRC16
+ *
+ *  @param len    Data length
+ *  @param cmd    Command code
+ *  @param *data  Pointer to data buffer
+ */
+static uint16_t CalcCRC16(uint8_t len, uint8_t cmd, uint8_t * data);
+
+/*
+ *  Add byte to calculated CRC
+ *
+ *  @param data   New byte
+ *  @param crc    Data length
+ */
 static uint16_t __calcCRC(uint8_t data, uint16_t crc);
 
 /********************************************
@@ -129,14 +169,24 @@ void UART_SendCreateInstancesRequest(uint8_t * model_id, uint8_t len)
   UARTInternal_Send(len, UART_CMD_CREATE_INSTANCES_REQUEST, model_id);
 }
 
-void UART_SendMeshMessageRequest(uint8_t * payload, uint8_t len)
+void UART_SendMeshMessageRequest(uint8_t * p_payload, uint8_t len)
 {
-  UARTInternal_Send(len, UART_CMD_MESH_MESSAGE_REQUEST, payload);
+  UARTInternal_Send(len, UART_CMD_MESH_MESSAGE_REQUEST, p_payload);
+}
+
+void UART_SendSensorUpdateRequest(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_SENSOR_UPDATE_REQUEST, p_payload);
 }
 
 void UART_StartNodeRequest(void)
 {
   UARTInternal_Send(0, UART_CMD_START_NODE_REQUEST, NULL);
+}
+
+void UART_FirmwareVersionRequest(void)
+{
+  UARTInternal_Send(0, UART_CMD_FIRMWARE_VERSION_REQUEST, NULL);
 }
 
 void UART_ProcessIncomingCommand(void)
@@ -154,37 +204,42 @@ void UART_ProcessIncomingCommand(void)
     }
     case UART_CMD_INIT_DEVICE_EVENT:
     {
-      ProcessEnterInitDevice(rx_frame.payload, rx_frame.len);
+      ProcessEnterInitDevice(rx_frame.p_payload, rx_frame.len);
       break;
     }
     case UART_CMD_CREATE_INSTANCES_RESPONSE:
     {
-      ProcessEnterDevice(rx_frame.payload, rx_frame.len);
+      ProcessEnterDevice(rx_frame.p_payload, rx_frame.len);
       break;
     }
     case UART_CMD_INIT_NODE_EVENT:
     {
-      ProcessEnterInitNode(rx_frame.payload, rx_frame.len);
+      ProcessEnterInitNode(rx_frame.p_payload, rx_frame.len);
       break;
     }
     case UART_CMD_START_NODE_RESPONSE:
     {
-      ProcessEnterNode(rx_frame.payload, rx_frame.len);
+      ProcessEnterNode(rx_frame.p_payload, rx_frame.len);
       break;
     }
     case UART_CMD_MESH_MESSAGE_REQUEST:
     {
-      ProcessMeshCommand(rx_frame.payload, rx_frame.len);
+      ProcessMeshCommand(rx_frame.p_payload, rx_frame.len);
       break;
     }
     case UART_CMD_ATTENTION_EVENT:
     {
-      ProcessAttention(rx_frame.payload, rx_frame.len);
+      ProcessAttention(rx_frame.p_payload, rx_frame.len);
       break;
     }
     case UART_CMD_ERROR:
     {
-      ProcessError(rx_frame.payload, rx_frame.len);
+      ProcessError(rx_frame.p_payload, rx_frame.len);
+      break;
+    }
+    case UART_CMD_FIRMWARE_VERSION_RESPONSE:
+    {
+      ProcessFirmwareVersion(rx_frame.p_payload, rx_frame.len);
       break;
     }
   }
@@ -203,8 +258,7 @@ static bool UARTInternal_Receive(RxFrame_t * rx_frame)
   while (UART_INTERFACE.available())
   {
     uint8_t received_byte = UART_INTERFACE.read();
-
-    if(count == PREAMBLE_BYTE_1_OFFSET)
+    if (count == PREAMBLE_BYTE_1_OFFSET)
     {
       if (received_byte == PREAMBLE_BYTE_1)
       {
@@ -215,7 +269,7 @@ static bool UARTInternal_Receive(RxFrame_t * rx_frame)
         count = 0;
       }
     }
-    else if(count == PREAMBLE_BYTE_2_OFFSET)
+    else if (count == PREAMBLE_BYTE_2_OFFSET)
     {
       if (received_byte == PREAMBLE_BYTE_2)
       {
@@ -226,43 +280,46 @@ static bool UARTInternal_Receive(RxFrame_t * rx_frame)
         count = 0;
       }
     }
-    else if(count == LEN_OFFSET)
+    else if (count == LEN_OFFSET)
     {
       rx_frame->len = received_byte;
       count++;
     }
-    else if(count == CMD_OFFSET)
+    else if (count == CMD_OFFSET)
     {
       rx_frame->cmd = received_byte;
       count++;
     }
-    else if((CMD_OFFSET < count) && (count < CRC_BYTE_1_OFFSET(rx_frame->len)))
+    else if ((CMD_OFFSET < count) && (count < CRC_BYTE_1_OFFSET(rx_frame->len)))
     {
-      rx_frame->payload[count - PAYLOAD_OFFSET] = received_byte;
+      rx_frame->p_payload[count - PAYLOAD_OFFSET] = received_byte;
       count++;
     }
-    else if(count == CRC_BYTE_1_OFFSET(rx_frame->len))
+    else if (count == CRC_BYTE_1_OFFSET(rx_frame->len))
     {
       crc = received_byte;
       count++;
     }
-    else if(count == CRC_BYTE_2_OFFSET(rx_frame->len))
+    else if (count == CRC_BYTE_2_OFFSET(rx_frame->len))
     {
-      crc       += ((uint16_t) received_byte) << 8;
-      isCRCValid = (crc == CalcCRC16(rx_frame->len, rx_frame->cmd, rx_frame->payload));
+      crc += ((uint16_t)received_byte) << 8;
+      isCRCValid = (crc == CalcCRC16(rx_frame->len, rx_frame->cmd, rx_frame->p_payload));
       count      = 0;
+
+      if (isCRCValid)
+        break;
     }
   }
 
   if (isCRCValid)
   {
-    PrintDebug("Received", rx_frame->len, rx_frame->cmd, rx_frame->payload, crc);
+    PrintDebug("Received", rx_frame->len, rx_frame->cmd, rx_frame->p_payload, crc);
   }
 
   return isCRCValid;
 }
 
-static void UARTInternal_Send(uint8_t len, uint8_t cmd, uint8_t *payload)
+static void UARTInternal_Send(uint8_t len, uint8_t cmd, uint8_t * p_payload)
 {
   uint16_t crc;
 
@@ -273,17 +330,17 @@ static void UARTInternal_Send(uint8_t len, uint8_t cmd, uint8_t *payload)
 
   for (int i = 0; i < len; i++)
   {
-    UART_INTERFACE.write(payload[i]);
+    UART_INTERFACE.write(p_payload[i]);
   }
 
-  crc = CalcCRC16(len, cmd, payload );
+  crc = CalcCRC16(len, cmd, p_payload);
   UART_INTERFACE.write(lowByte(crc));
   UART_INTERFACE.write(highByte(crc));
 
-  PrintDebug("Sent", len, cmd, payload, crc);
+  PrintDebug("Sent", len, cmd, p_payload, crc);
 }
 
-static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t *buf, uint16_t crc)
+static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t * buf, uint16_t crc)
 {
   const char * cmdName[] = {
     "Unknown",
@@ -312,6 +369,8 @@ static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t *buf,
     "SoftwareResetRequest",
     "SoftwareResetResponse",
     "SensorUpdateResponse",
+    "DeviceUUIDRequest",
+    "DeviceUUIDResponse",
   };
 
   DEBUG_INTERFACE.printf("%s %s command\n", dir, (cmd < ARRAY_SIZE(cmdName)) ? cmdName[cmd] : "Unknown");
@@ -326,7 +385,7 @@ static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t *buf,
   DEBUG_INTERFACE.printf("\t CRC: 0x%02X%02X\n", lowByte(crc), highByte(crc));
 }
 
-static uint16_t CalcCRC16(uint8_t len, uint8_t cmd, uint8_t* data) 
+static uint16_t CalcCRC16(uint8_t len, uint8_t cmd, uint8_t * data)
 {
   uint16_t crc = CRC_INIT_VAL;
   crc          = __calcCRC(len, crc);
@@ -345,7 +404,7 @@ static uint16_t __calcCRC(uint8_t data, uint16_t crc)
   uint8_t i;
   for (i = 0; i < 8; i++)
   {
-    if (((crc & 0x8000) >> 8) ^ (data & 0x80)) 
+    if (((crc & 0x8000) >> 8) ^ (data & 0x80))
     {
       crc = (crc << 1) ^ CRC_POLYNOMIAL;
     }

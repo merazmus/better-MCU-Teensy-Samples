@@ -19,42 +19,68 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef UART_H_
-#define UART_H_
+#ifndef MESH_H_
+#define MESH_H_
 
 /********************************************
  * INCLUDES                                 *
  ********************************************/
 
+#include "stddef.h"
 #include "stdint.h"
 
 /********************************************
  * EXPORTED #define CONSTANTS AND MACROS    *
  ********************************************/
 
-/**< Defines maximum data length in frame */
-#define MAX_PAYLOAD_SIZE      127
+/**
+ * Supported Mesh Model IDs definitions
+ */
+#define MESH_MODEL_ID_LIGHT_LC_SERVER                 0x130F
+#define MESH_MODEL_ID_SENSOR_SERVER                   0x1100
+#define MESH_MODEL_ID_SENSOR_SETUP_SERVER             0x1101
+
+/**
+* Supported Mesh Property IDs definitions
+*/
+#define MESH_PROPERTY_ID_PRESENCE_DETECTED            0x004D
+#define MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL  0x004E
 
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
  ********************************************/
 
-void UART_Init(void);
-void UART_SendPingRequest(void);
-void UART_SendPongResponse(void);
-void UART_SendSoftwareResetRequest(void);
-void UART_SendCreateInstancesRequest(uint8_t * model_id, uint8_t len);
-void UART_SendMeshMessageRequest(uint8_t * payload, uint8_t len);
-void UART_SendSensorUpdateRequest(uint8_t * payload, uint8_t len);
-void UART_StartNodeRequest(void);
-void UART_ProcessIncomingCommand(void);
+/*
+ *  Search for model ID in a message
+ *
+ *  @param p_payload            Pointer to payload
+ *  @param len                  Payload len
+ *  @param expected_model_id    Expected model ID
+ *  @return                     True if found, false otherwise
+ */
+bool Mesh_IsModelAvailable(uint8_t * p_payload, uint8_t len, uint16_t expected_model_id);
 
-extern void ProcessEnterInitDevice(uint8_t * payload, uint8_t len);
-extern void ProcessEnterDevice(uint8_t * payload, uint8_t len);
-extern void ProcessEnterInitNode(uint8_t * payload, uint8_t len);
-extern void ProcessEnterNode(uint8_t * payload, uint8_t len);
-extern void ProcessMeshCommand(uint8_t * payload, uint8_t len);
-extern void ProcessAttention(uint8_t * payload, uint8_t len);
-extern void ProcessError(uint8_t * payload, uint8_t len);
+/*
+ *  Process Mesh Message Request command
+ *
+ *  @param p_payload    Pointer to payload
+ *  @param len          Payload len
+ */
+void Mesh_ProcessMeshCommand(uint8_t * p_payload, size_t len);
 
-#endif
+/*
+ *  Send Light Lightness Get message
+ *
+ *  @param instance_idx    Instance index
+ */
+void Mesh_SendLightLightnessGet(uint8_t instance_idx);
+
+/*
+ *  Process new target lightness
+ *
+ *  @param val                 Lightness value
+ *  @param transition_time     Transition time
+ */
+extern void ProcessTargetLightness(uint16_t val, uint32_t transition_time);
+
+#endif  // MESH_H_

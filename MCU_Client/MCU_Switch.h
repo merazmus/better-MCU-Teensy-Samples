@@ -19,35 +19,41 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef MESH_H_
-#define MESH_H_
+#ifndef MCU_SWITCH_H
+#define MCU_SWITCH_H
 
 /********************************************
  * INCLUDES                                 *
  ********************************************/
 
-#include "stdint.h"
-#include "stddef.h"
-
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
-
-/**
- * Supported Mesh Model IDs definitions
- */
-#define MESH_MODEL_ID_LIGHT_LIGHTNESS_SERVER 0x1300
+#include <stdint.h>
 
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
  ********************************************/
 
-bool Mesh_IsModelAvailable(uint8_t * payload, uint8_t len, uint16_t expected_model_id);
-void Mesh_AddRegisteredModelId(uint16_t model_id);
-void Mesh_ResetRegisteredModelId(void);
-void Mesh_ProcessMeshCommand(uint8_t * payload, size_t len);
-void Mesh_SendLightLightnessGet(void);
+/*
+ *  Setup light lightness client hardware
+ */
+void SetupSwitch(void);
 
-extern void ProcessTargetLightness(uint16_t val, uint32_t transition_time);
+/*
+ *  Lightness client main function, should be called in Arduino main loop
+ */
+void LoopSwitch(void);
 
-#endif // MESH_H_
+/*
+ *  Set Lightness Client instance index
+ *
+ *  @param idx  Lightness value
+ */
+void SetInstanceIdxSwitch(uint8_t idx);
+
+/*
+ *  Get Lightness Client instance index
+ *
+ *  @return  Lightness value
+ */
+uint8_t GetInstanceIdxSwitch(void);
+
+#endif  // MCU_SWITCH_H

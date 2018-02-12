@@ -19,35 +19,34 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef MESH_H_
-#define MESH_H_
-
-/********************************************
- * INCLUDES                                 *
- ********************************************/
-
-#include "stdint.h"
-#include "stddef.h"
-
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
-
-/**
- * Supported Mesh Model IDs definitions
- */
-#define MESH_MODEL_ID_SENSOR_CLIENT  0x1102
+#ifndef MCU_LCD_H
+#define MCU_LCD_H
 
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
  ********************************************/
 
-bool Mesh_IsModelAvailable(uint8_t * payload, uint8_t len, uint16_t expected_model_id);
-void Mesh_AddRegisteredModelId(uint16_t model_id);
-void Mesh_ResetRegisteredModelId(void);
-void Mesh_ProcessMeshCommand(uint8_t * payload, size_t len);
+/*
+ *  Write line on LCD
+ *
+ *  @param line    Line number
+ *  @param * text  Text to write
+ */
+void WriteLineLCD(size_t line, char * text);
 
-extern void ProcessPresentAmbientLightLevel(uint16_t src_addr, float value);
-extern void ProcessPresenceDetected(uint16_t src_addr, bool value);
+/*
+ *  Clear LCD
+ */
+void ClearLCD(void);
 
-#endif // MESH_H_
+/*
+ *  Setup LCD hardware
+ */
+void SetupLCD(void);
+
+/*
+ *  LCD main function, should be called in Arduino main loop
+ */
+void LoopLCD(void);
+
+#endif  // MCU_LCD
