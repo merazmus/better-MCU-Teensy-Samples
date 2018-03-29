@@ -35,7 +35,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  ********************************************/
 
 #define PIN_PIR                     5            /**< Defines PIR sensor location */
-#define PIN_ALS                     18           /**< Defines ALS sensor location */
+#define PIN_ALS                     17           /**< Defines ALS sensor location */
 
 #define ALS_CONVERSION_COEFFICIENT  16UL         /**< Defines light sensor coefficient */
 #define PIR_DEBOUNCE_TIME_MS        20           /**< Defines PIR debounce time in milliseconds */

@@ -33,7 +33,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * LOCAL #define CONSTANTS AND MACROS       *
  ********************************************/
 
-#define PB_REINIT PIN_SW_4 /**< Defines LCD reinit button */
+#define PB_REINIT PIN_ENCODER_SW /**< Defines LCD reinit button */
 
 /********************************************
  * STATIC VARIABLES                         *

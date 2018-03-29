@@ -178,7 +178,8 @@ void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
   ModemState     = MODEM_STATE_INIT_DEVICE;
   AttentionState = false;
 
-  SetInstanceIdxSwitch(INSTANCE_INDEX_UNKNOWN);
+  SetInstanceIdxSwitch1(INSTANCE_INDEX_UNKNOWN);
+  SetInstanceIdxSwitch2(INSTANCE_INDEX_UNKNOWN);
   SetInstanceIdxSensor(INSTANCE_INDEX_UNKNOWN);
 
   if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_LC_CLIENT))
@@ -194,14 +195,19 @@ void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
   }
 
   uint8_t model_ids[] = {
-    // Light Lightness controller client
+    // First Light Lightness controller client
+    lowByte(MESH_MODEL_ID_LIGHT_LC_CLIENT),
+    highByte(MESH_MODEL_ID_LIGHT_LC_CLIENT),
+    // Second Light Lightness controller client
     lowByte(MESH_MODEL_ID_LIGHT_LC_CLIENT),
     highByte(MESH_MODEL_ID_LIGHT_LC_CLIENT),
     // Sensor client
     lowByte(MESH_MODEL_ID_SENSOR_CLIENT),
     highByte(MESH_MODEL_ID_SENSOR_CLIENT),
   };
+  
   UART_SendCreateInstancesRequest(model_ids, sizeof(model_ids));
+  UART_FirmwareVersionRequest();
 }
 
 void ProcessEnterDevice(uint8_t * p_payload, uint8_t len)
@@ -216,7 +222,8 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
   ModemState     = MODEM_STATE_INIT_NODE;
   AttentionState = false;
 
-  SetInstanceIdxSwitch(INSTANCE_INDEX_UNKNOWN);
+  SetInstanceIdxSwitch1(INSTANCE_INDEX_UNKNOWN);
+  SetInstanceIdxSwitch2(INSTANCE_INDEX_UNKNOWN);
   SetInstanceIdxSensor(INSTANCE_INDEX_UNKNOWN);
 
   for (size_t index = 0; index < len;)
@@ -227,7 +234,14 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
 
     if (MESH_MODEL_ID_LIGHT_LC_CLIENT == model_id)
     {
-      SetInstanceIdxSwitch(current_model_id_instance_index);
+      if (GetInstanceIdxSwitch1() == INSTANCE_INDEX_UNKNOWN)
+      {
+        SetInstanceIdxSwitch1(current_model_id_instance_index);
+      }
+      else
+      {
+        SetInstanceIdxSwitch2(current_model_id_instance_index);
+      }
     }
 
     if (MESH_MODEL_ID_SENSOR_CLIENT == model_id)
@@ -236,10 +250,17 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
     }
   }
 
-  if (GetInstanceIdxSwitch() == INSTANCE_INDEX_UNKNOWN)
+  if (GetInstanceIdxSwitch1() == INSTANCE_INDEX_UNKNOWN)
   {
     ModemState = MODEM_STATE_UNKNOWN;
-    DEBUG_INTERFACE.println("Light Lightness Controller Client model id not found in init node message");
+    DEBUG_INTERFACE.println("First Light Lightness Controller Client model id not found in init node message");
+    return;
+  }
+
+  if (GetInstanceIdxSwitch2() == INSTANCE_INDEX_UNKNOWN)
+  {
+    ModemState = MODEM_STATE_UNKNOWN;
+    DEBUG_INTERFACE.println("Second Light Lightness Controller Client model id not found in init node message");
     return;
   }
 
@@ -251,6 +272,7 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
   }
 
   UART_StartNodeRequest();
+  UART_FirmwareVersionRequest();
 }
 
 void ProcessEnterNode(uint8_t * p_payload, uint8_t len)
@@ -355,7 +377,6 @@ void setup()
   SetupSensor();
 
   UART_Init();
-  UART_FirmwareVersionRequest();
   UART_SendSoftwareResetRequest();
 }
 

@@ -38,9 +38,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
  * Buttons placement definitions
  */
-#define PB_ON                       PIN_SW_1          /**< Defines ON button location. */
-#define PB_OFF                      PIN_SW_2          /**< Defines OFF button location. */
-#define PB_LC_MODE_ON               PIN_ENCODER_SW    /**< Defines LC MODE button location. */
+#define PB_ON_1                     PIN_SW_1          /**< Defines ON button location. */
+#define PB_OFF_1                    PIN_SW_2          /**< Defines OFF button location. */
+#define PB_ON_2                     PIN_SW_3          /**< Defines ON button location. */
+#define PB_OFF_2                    PIN_SW_4          /**< Defines OFF button location. */
 #define PB_ENCODER_A                PIN_ENCODER_A     /**< Defines Encoder A pin location. */
 #define PB_ENCODER_B                PIN_ENCODER_B     /**< Defines Encoder B pin location. */
 
@@ -82,30 +83,37 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * STATIC VARIABLES                         *
  ********************************************/
 
-static volatile bool LightLcMode              = false;               /**< Implies if LightLC Mode button has been pushed */
-static volatile bool On                       = false;               /**< Implies if Generic ON button has been pushed */
-static volatile bool Off                      = false;               /**< Implies if Generic OFF button has been pushed */
-static volatile int  Encoder                  = 0;                   /**< Implies if Encoder position has changed */
-static uint8_t       LightLcClientInstanceIdx = INSTANCE_INDEX_UNKNOWN;
+static volatile bool On1                       = false;               /**< Implies if Generic ON button has been pushed */
+static volatile bool Off1                      = false;               /**< Implies if Generic OFF button has been pushed */
+static volatile bool On2                       = false;               /**< Implies if Generic ON button has been pushed */
+static volatile bool Off2                      = false;               /**< Implies if Generic OFF button has been pushed */
+static volatile int  Encoder                   = 0;                   /**< Implies if Encoder position has changed */
+static uint8_t       LightLcClient1InstanceIdx = INSTANCE_INDEX_UNKNOWN;
+static uint8_t       LightLcClient2InstanceIdx = INSTANCE_INDEX_UNKNOWN;
 
 /********************************************
  * LOCAL FUNCTION PROTOTYPES                *
  ********************************************/
 
 /*
- *  Light Controller Mode On button interrupt handler
+ *  Generic On 1 button interrupt handler
  */
-static void InterruptLCModeOnPBClick(void);
+static void InterruptOn1PBClick(void);
 
 /*
- *  Generic On button interrupt handler
+ *  Generic Off 1 button interrupt handler
  */
-static void InterruptOnPBClick(void);
+static void InterruptOff1PBClick(void);
 
 /*
- *  Generic Off button interrupt handler
+ *  Generic On 2 button interrupt handler
  */
-static void InterruptOffPBClick(void);
+static void InterruptOn2PBClick(void);
+
+/*
+ *  Generic Off 2 button interrupt handler
+ */
+static void InterruptOff2PBClick(void);
 
 /*
  *  Encoder pin A interrupt handler
@@ -140,28 +148,36 @@ static void PrintLightness(unsigned lightness_actual);
  * LOCAL FUNCTIONS DEFINITIONS              *
  ********************************************/
 
-static void InterruptLCModeOnPBClick(void)
+static void InterruptOn1PBClick(void)
 {
   delay(BUTTON_DEBOUNCE_TIME_MS);
-  if (digitalRead(PB_LC_MODE_ON)) return;
+  if (digitalRead(PB_ON_1)) return;
 
-  LightLcMode = true;
+  On1 = true;
 }
 
-static void InterruptOnPBClick(void)
+static void InterruptOff1PBClick(void)
 {
   delay(BUTTON_DEBOUNCE_TIME_MS);
-  if (digitalRead(PB_ON)) return;
+  if (digitalRead(PB_OFF_1)) return;
 
-  On = true;
+  Off1 = true;
 }
 
-static void InterruptOffPBClick(void)
+static void InterruptOn2PBClick(void)
 {
   delay(BUTTON_DEBOUNCE_TIME_MS);
-  if (digitalRead(PB_OFF)) return;
+  if (digitalRead(PB_ON_2)) return;
 
-  Off = true;
+  On2 = true;
+}
+
+static void InterruptOff2PBClick(void)
+{
+  delay(BUTTON_DEBOUNCE_TIME_MS);
+  if (digitalRead(PB_OFF_2)) return;
+
+  Off2 = true;
 }
 
 static void InterruptEncoderA(void)
@@ -225,58 +241,81 @@ static void PrintLightness(unsigned lightness_actual)
  * EXPORTED FUNCTION DEFINITIONS            *
  ********************************************/
 
-void SetInstanceIdxSwitch(uint8_t idx)
+void SetInstanceIdxSwitch1(uint8_t idx)
 {
-  LightLcClientInstanceIdx = idx;
+  LightLcClient1InstanceIdx = idx;
 }
 
-uint8_t GetInstanceIdxSwitch(void)
+uint8_t GetInstanceIdxSwitch1(void)
 {
-  return LightLcClientInstanceIdx;
+  return LightLcClient1InstanceIdx;
+}
+
+void SetInstanceIdxSwitch2(uint8_t idx)
+{
+  LightLcClient2InstanceIdx = idx;
+}
+
+uint8_t GetInstanceIdxSwitch2(void)
+{
+  return LightLcClient2InstanceIdx;
 }
 
 void SetupSwitch(void)
 {
   DEBUG_INTERFACE.println("Switch initialization.\n");
-  pinMode(PB_ON,         INPUT_PULLUP);
-  pinMode(PB_OFF,        INPUT_PULLUP);
-  pinMode(PB_LC_MODE_ON, INPUT_PULLUP);
+  pinMode(PB_ON_1,       INPUT_PULLUP);
+  pinMode(PB_OFF_1,      INPUT_PULLUP);
+  pinMode(PB_ON_2,       INPUT_PULLUP);
+  pinMode(PB_OFF_2,      INPUT_PULLUP);
   pinMode(PB_ENCODER_A,  INPUT_PULLUP);
   pinMode(PB_ENCODER_B,  INPUT_PULLUP);
  
-  attachInterrupt(digitalPinToInterrupt(PB_ON),         InterruptOnPBClick,        FALLING);
-  attachInterrupt(digitalPinToInterrupt(PB_OFF),        InterruptOffPBClick,       FALLING);
-  attachInterrupt(digitalPinToInterrupt(PB_LC_MODE_ON), InterruptLCModeOnPBClick,  FALLING);
-  attachInterrupt(digitalPinToInterrupt(PB_ENCODER_A),  InterruptEncoderA,         FALLING);
-  attachInterrupt(digitalPinToInterrupt(PB_ENCODER_B),  InterruptEncoderB,         FALLING);
+  attachInterrupt(digitalPinToInterrupt(PB_ON_1),       InterruptOn1PBClick,        FALLING);
+  attachInterrupt(digitalPinToInterrupt(PB_OFF_1),      InterruptOff1PBClick,       FALLING);
+  attachInterrupt(digitalPinToInterrupt(PB_ON_2),       InterruptOn2PBClick,        FALLING);
+  attachInterrupt(digitalPinToInterrupt(PB_OFF_2),      InterruptOff2PBClick,       FALLING);
+  attachInterrupt(digitalPinToInterrupt(PB_ENCODER_A),  InterruptEncoderA,          FALLING);
+  attachInterrupt(digitalPinToInterrupt(PB_ENCODER_B),  InterruptEncoderB,          FALLING);
 }
 
 void LoopSwitch(void)
 {
-  if (LightLcMode)
+  if (On1)
   {
-    LightLcMode = false;
-    DEBUG_INTERFACE.println("Light LC mode ON\n");
-    Mesh_SendLightLightnessControllerModeSet(LightLcClientInstanceIdx, 
-                                             LIGHT_LC_MODE_ON, 
-                                             DEFAULT_NUMBER_OF_REPEATS);
-  }
-
-  if (On)
-  {
-    On = false;
-    DEBUG_INTERFACE.println("Generic ON\n");
-    Mesh_SendGenericOnOffSet(LightLcClientInstanceIdx, 
+    On1 = false;
+    DEBUG_INTERFACE.println("Generic ON 1\n");
+    Mesh_SendGenericOnOffSet(LightLcClient1InstanceIdx, 
                              GENERIC_ON, 
                              ON_OFF_TRANSITION_TIME_MS,
                              DEFAULT_DELAY_TIME_MS);
   }
 
-  if (Off)
+  if (Off1)
   {
-    Off = false;
-    DEBUG_INTERFACE.println("Generic OFF\n");
-    Mesh_SendGenericOnOffSet(LightLcClientInstanceIdx, 
+    Off1 = false;
+    DEBUG_INTERFACE.println("Generic OFF 1\n");
+    Mesh_SendGenericOnOffSet(LightLcClient1InstanceIdx, 
+                             GENERIC_OFF,
+                             ON_OFF_TRANSITION_TIME_MS,
+                             DEFAULT_DELAY_TIME_MS);
+  }
+
+  if (On2)
+  {
+    On2 = false;
+    DEBUG_INTERFACE.println("Generic ON 2\n");
+    Mesh_SendGenericOnOffSet(LightLcClient2InstanceIdx, 
+                             GENERIC_ON, 
+                             ON_OFF_TRANSITION_TIME_MS,
+                             DEFAULT_DELAY_TIME_MS);
+  }
+
+  if (Off2)
+  {
+    Off2 = false;
+    DEBUG_INTERFACE.println("Generic OFF 2\n");
+    Mesh_SendGenericOnOffSet(LightLcClient2InstanceIdx, 
                              GENERIC_OFF,
                              ON_OFF_TRANSITION_TIME_MS,
                              DEFAULT_DELAY_TIME_MS);
@@ -296,7 +335,7 @@ void LoopSwitch(void)
           delta = 0;
 
       delta += Encoder;
-      Mesh_SendGenericDeltaSet(LightLcClientInstanceIdx,
+      Mesh_SendGenericDeltaSet(LightLcClient1InstanceIdx,
                                DELTA_STEP_VALUE * delta,
                                is_new_tid,
                                DEFAULT_TRANSITION_TIME_MS,
@@ -319,7 +358,7 @@ void LoopSwitch(void)
     if (HasLightnessChanged(lightness_actual))
     {
       PrintLightness(lightness_actual);
-      Mesh_SendLightLightnessSet(LightLcClientInstanceIdx,
+      Mesh_SendLightLightnessSet(LightLcClient1InstanceIdx,
                                  lightness_actual,
                                  DEFAULT_TRANSITION_TIME_MS,
                                  DEFAULT_DELAY_TIME_MS);

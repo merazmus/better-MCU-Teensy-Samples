@@ -35,13 +35,29 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  ********************************************/
 
 /**
+ * Define for calculate lightness for 0-10 V (value 0) or 1-10 V (value 1)
+ */
+
+#define MODULE_1_10_V
+
+#define LIGHTNESS_MAX                            UINT16_MAX
+#define LIGHTNESS_MIN                            0
+#define PWM_OUTPUT_MAX                           UINT16_MAX
+
+#ifdef MODULE_1_10_V
+#define PWM_OUTPUT_MIN                           (0.1 * PWM_OUTPUT_MAX)
+#else
+#define PWM_OUTPUT_MIN                           0
+#endif
+/**
  * Light Lightness Controller Server configuration
  */
 #define DIMM_INTERRUPT_TIME_MS                   5            /**< Dimming control interrupt interval definition [ms]. */
 #define DIMM_INTERRUPT_TIME_US                   (DIMM_INTERRUPT_TIME_MS * 1000)
 #define CALC_SLOPE(current,target,steps)         (((target)-(current))/(steps))
-#define CALC_NEW_LIGHTNESS(target, slope, steps) ((target) - ((steps) * (slope)))
-#define CALC_PWM_OUTPUT(val)                     (((uint32_t)(val)*(val))>>24)
+#define CALC_NEW_LIGHTNESS(target, slope, steps) ((target) - ((steps) * (slope)))       
+
+
 
 /********************************************
  * LOCAL TYPES DEFINITIONS                  *
@@ -58,7 +74,12 @@ struct DimLight
 /********************************************
  * LOCAL FUNCTIONS PROTOTYPES               *
  ********************************************/
-
+/*
+ *  Convert Lightness Actual to Lightness Linear (based on Spec Model, chapter 6.1.2.2.1)
+ *
+ *  @param val     Lightness Actual value
+ */
+static inline uint32_t ConvertLightnessActualToLinear(uint16_t val);
 /*
  *  Dimming interrupt handler.
  */
@@ -83,6 +104,12 @@ static volatile bool AttentionLedState       = false;
  * LOCAL FUNCTIONS DEFINITIONS              *
  ********************************************/
 
+static inline uint32_t ConvertLightnessActualToLinear(uint16_t val)
+{
+  return ceil(LIGHTNESS_MAX * pow((double)val/LIGHTNESS_MAX, 2)); 
+}
+
+
 static void DimmInterrupt(void)
 {
   if (!AttentionLedState)
@@ -100,7 +127,19 @@ static void DimmInterrupt(void)
 
 static void PWMLightnessOutput(uint16_t val)
 {
-  uint32_t pwm_out = CALC_PWM_OUTPUT(val);
+  const float coefficient = (float)(PWM_OUTPUT_MAX-PWM_OUTPUT_MIN) / (float)(LIGHTNESS_MAX-LIGHTNESS_MIN);
+  uint32_t pwm_out;
+  if (val == 0)
+  {
+    pwm_out = 0; 
+  }
+  else
+  {
+    // calc value to PWM OUTPUT
+    pwm_out = ConvertLightnessActualToLinear(val);
+    // Calculate value depend of 0-10 V 
+    pwm_out = coefficient * (pwm_out - LIGHTNESS_MIN) + PWM_OUTPUT_MIN;
+  }
   analogWrite(PIN_PWM, pwm_out);
 }
 
@@ -148,6 +187,7 @@ void ProcessTargetLightness(uint16_t val, uint32_t transition_time)
 void SetupLightnessServer(void)
 {
   pinMode(PIN_PWM, OUTPUT);
+  analogWriteResolution(PWM_RESOLUTION);
   Timer1.initialize(DIMM_INTERRUPT_TIME_US);
   Timer1.attachInterrupt(DimmInterrupt);
 }

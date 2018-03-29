@@ -43,17 +43,31 @@ void SetupSwitch(void);
 void LoopSwitch(void);
 
 /*
+ *  Set first Lightness Client instance index
+ *
+ *  @param idx  Lightness value
+ */
+void SetInstanceIdxSwitch1(uint8_t idx);
+
+/*
+ *  Set first Lightness Client instance index
+ *
+ *  @param idx  Lightness value
+ */
+uint8_t GetInstanceIdxSwitch1(void);
+
+/*
+ *  Set  Lightness Client instance index
+ *
+ *  @param idx  Lightness value
+ */
+void SetInstanceIdxSwitch2(uint8_t idx);
+
+/*
  *  Set Lightness Client instance index
  *
  *  @param idx  Lightness value
  */
-void SetInstanceIdxSwitch(uint8_t idx);
-
-/*
- *  Get Lightness Client instance index
- *
- *  @return  Lightness value
- */
-uint8_t GetInstanceIdxSwitch(void);
+uint8_t GetInstanceIdxSwitch2(void);
 
 #endif  // MCU_SWITCH_H

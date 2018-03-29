@@ -48,4 +48,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PIR_REGISTRATION_ORDER     1  /**< Defines sensor servers registration order */
 #define ALS_REGISTRATION_ORDER     2  /**< Defines sensor servers registration order */
 
+#define PWM_RESOLUTION      	   16 /**< Defines PWM resolution value */
+
 #endif  // CONFIG_H_

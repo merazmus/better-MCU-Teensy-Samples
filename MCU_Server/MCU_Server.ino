@@ -282,7 +282,6 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
     return;
   }
 
-  Mesh_SendLightLightnessGet(GetLightnessServerIdx());
   UART_StartNodeRequest();
 }
 
@@ -290,6 +289,8 @@ void ProcessEnterNode(uint8_t * p_payload, uint8_t len)
 {
   DEBUG_INTERFACE.println("Node State.\n");
   ModemState = MODEM_STATE_NODE;
+  
+  Mesh_SendLightLightnessGet(GetLightnessServerIdx());
 }
 
 void ProcessMeshCommand(uint8_t * p_payload, uint8_t len)
