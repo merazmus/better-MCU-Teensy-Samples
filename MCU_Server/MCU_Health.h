@@ -19,69 +19,54 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef MESH_H_
-#define MESH_H_
+#ifndef MCU_HEALTH_H
+#define MCU_HEALTH_H
 
 /********************************************
  * INCLUDES                                 *
  ********************************************/
 
-#include "stddef.h"
-#include "stdint.h"
+#include <stdint.h>
 
 /********************************************
  * EXPORTED #define CONSTANTS AND MACROS    *
  ********************************************/
 
-/**
- * Supported Mesh Model IDs definitions
- */
-#define MESH_MODEL_ID_LIGHT_LC_SERVER                 0x130F
-#define MESH_MODEL_ID_SENSOR_SERVER                   0x1100
-#define MESH_MODEL_ID_SENSOR_SETUP_SERVER             0x1101
-#define MESH_MODEL_ID_HEALTH_SERVER                   0x0002
-
-/**
-* Supported Mesh Property IDs definitions
-*/
-#define MESH_PROPERTY_ID_PRESENCE_DETECTED            0x004D
-#define MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL  0x004E
+/** Silvair Mesh Model Company Id */
+#define SILVAIR_ID                     0x0136u
 
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
  ********************************************/
 
 /*
- *  Search for model ID in a message
- *
- *  @param p_payload            Pointer to payload
- *  @param len                  Payload len
- *  @param expected_model_id    Expected model ID
- *  @return                     True if found, false otherwise
+ * Indicate timer tick.
  */
-bool Mesh_IsModelAvailable(uint8_t * p_payload, uint8_t len, uint16_t expected_model_id);
+void IndicateHealth(void);
 
 /*
- *  Process Mesh Message Request command
- *
- *  @param p_payload    Pointer to payload
- *  @param len          Payload len
+ *  Check if there is test in progress.
  */
-void Mesh_ProcessMeshCommand(uint8_t * p_payload, size_t len);
+bool IsTestInProgress(void);
 
 /*
- *  Send Light Lightness Get message
- *
- *  @param instance_idx    Instance index
+ * Setup health hardware
  */
-void Mesh_SendLightLightnessGet(uint8_t instance_idx);
+void SetupHealth(void);
 
 /*
- *  Process new target lightness
- *
- *  @param val                 Lightness value
- *  @param transition_time     Transition time
+ * Health main function, should be called in Arduino main loop
  */
-extern void ProcessTargetLightness(uint16_t val, uint32_t transition_time);
+void LoopHealth(void);
 
-#endif  // MESH_H_
+/*
+ * Set index of registered Health Server model
+ */ 
+void SetHealthServerIdx(uint8_t idx);
+
+/*
+ * Get index of registered Health Server model
+ */ 
+uint8_t GetHealthServerIdx(void);
+
+#endif  // MCU_HEALTH_H

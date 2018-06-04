@@ -35,7 +35,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define UART_INTERFACE              (Serial2) /**< Defines serial port to communicate with modem. */
 #define UART_INTERFACE_BAUDRATE     57600     /**< Defines baudrate of modem interface. */
 
-#define PIN_LED                     13  /**< Defines led pin. */
+#define PIN_LED_1                   11  /**< Defines led 1 pin. */
+#define PIN_LED_2                   12  /**< Defines led 2 pin. */
+#define PIN_LED_STATUS              13  /**< Defines led pin. */
 #define PIN_PWM                     16  /**< Defines pwm pin. */
 #define PIN_SW_1                    22  /**< Defines switch 1 pin. */
 #define PIN_SW_2                    21  /**< Defines switch 2 pin. */

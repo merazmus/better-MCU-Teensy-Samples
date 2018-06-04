@@ -45,6 +45,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 void UART_Init(void);
 
 /*
+ *  Enables Ping Requests and Responses
+ */
+void UART_EnablePings(void);
+
+/*
+ *  Disables Ping Requests and Responses
+ */
+void UART_DisablePings(void);
+
+/*
  *  Send Ping Request command
  */
 void UART_SendPingRequest(void);
@@ -87,6 +97,38 @@ void UART_SendSensorUpdateRequest(uint8_t * p_payload, uint8_t len);
  *  Send Start Node Request command
  */
 void UART_StartNodeRequest(void);
+
+/*
+ *  Send Set Fault Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void UART_SendSetFaultRequest(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Send Clear Fault Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void UART_SendClearFaultRequest(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Send Test Start Response command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void UART_SendTestStartResponse(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Send Test Finished Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void UART_SendTestFinishedRequest(uint8_t * p_payload, uint8_t len);
 
 /*
  *  Receive and process incoming UART command
@@ -147,5 +189,13 @@ extern void ProcessAttention(uint8_t * p_payload, uint8_t len);
  *  @param len           Payload len
  */
 extern void ProcessError(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Process Start Test command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+extern void ProcessStartTest(uint8_t * p_payload, uint8_t len);
 
 #endif  // UART_H_

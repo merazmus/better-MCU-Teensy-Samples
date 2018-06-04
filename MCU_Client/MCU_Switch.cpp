@@ -28,6 +28,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Config.h"
 #include "LCD.h"
 #include "Mesh.h"
+#include "Encoder.h"
 #include <limits.h>
 #include <stdint.h>
 
@@ -62,7 +63,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
  * Generic Delta Client step
  */
-#define DELTA_STEP_VALUE            0x1500       /**< Defines Generic Delta minimal step */
+#define DELTA_STEP_VALUE            0x500        /**< Defines Generic Delta minimal step */
 #define DELTA_INTVL_MS              100          /**< Defines the shortest interval beetwen two Delta Set messages. */
 #define DELTA_NEW_TID_INTVL         350          /**< Defines the shortest interval beetwen generation of new TID. */
 
@@ -87,9 +88,9 @@ static volatile bool On1                       = false;               /**< Impli
 static volatile bool Off1                      = false;               /**< Implies if Generic OFF button has been pushed */
 static volatile bool On2                       = false;               /**< Implies if Generic ON button has been pushed */
 static volatile bool Off2                      = false;               /**< Implies if Generic OFF button has been pushed */
-static volatile int  Encoder                   = 0;                   /**< Implies if Encoder position has changed */
 static uint8_t       LightLcClient1InstanceIdx = INSTANCE_INDEX_UNKNOWN;
 static uint8_t       LightLcClient2InstanceIdx = INSTANCE_INDEX_UNKNOWN;
+static Encoder       DeltaEncoder(PB_ENCODER_B, PB_ENCODER_A);
 
 /********************************************
  * LOCAL FUNCTION PROTOTYPES                *
@@ -114,16 +115,6 @@ static void InterruptOn2PBClick(void);
  *  Generic Off 2 button interrupt handler
  */
 static void InterruptOff2PBClick(void);
-
-/*
- *  Encoder pin A interrupt handler
- */
-static void InterruptEncoderA(void);
-
-/*
- *  Encoder pin B interrupt handler
- */
-static void InterruptEncoderB(void);
 
 /*
  *  Check if lightness need an update
@@ -178,26 +169,6 @@ static void InterruptOff2PBClick(void)
   if (digitalRead(PB_OFF_2)) return;
 
   Off2 = true;
-}
-
-static void InterruptEncoderA(void)
-{
-  if (digitalRead(PB_ENCODER_A) || digitalRead(PB_ENCODER_B)) return;
-  delayMicroseconds(ENCODER_DEBOUNCE_TIME_US);
-  if (digitalRead(PB_ENCODER_A) || digitalRead(PB_ENCODER_B)) return;
-  Encoder--;
-
-  while(!(digitalRead(PB_ENCODER_A) && digitalRead(PB_ENCODER_B))) { }
-}
-
-static void InterruptEncoderB(void)
-{
-  if (digitalRead(PB_ENCODER_A) || digitalRead(PB_ENCODER_B)) return;
-  delayMicroseconds(ENCODER_DEBOUNCE_TIME_US);
-  if (digitalRead(PB_ENCODER_A) || digitalRead(PB_ENCODER_B)) return;
-  Encoder++;
-
-  while(!(digitalRead(PB_ENCODER_A) && digitalRead(PB_ENCODER_B))) { }
 }
 
 static bool HasLightnessChanged(int lightness_actual)
@@ -268,15 +239,11 @@ void SetupSwitch(void)
   pinMode(PB_OFF_1,      INPUT_PULLUP);
   pinMode(PB_ON_2,       INPUT_PULLUP);
   pinMode(PB_OFF_2,      INPUT_PULLUP);
-  pinMode(PB_ENCODER_A,  INPUT_PULLUP);
-  pinMode(PB_ENCODER_B,  INPUT_PULLUP);
  
   attachInterrupt(digitalPinToInterrupt(PB_ON_1),       InterruptOn1PBClick,        FALLING);
   attachInterrupt(digitalPinToInterrupt(PB_OFF_1),      InterruptOff1PBClick,       FALLING);
   attachInterrupt(digitalPinToInterrupt(PB_ON_2),       InterruptOn2PBClick,        FALLING);
   attachInterrupt(digitalPinToInterrupt(PB_OFF_2),      InterruptOff2PBClick,       FALLING);
-  attachInterrupt(digitalPinToInterrupt(PB_ENCODER_A),  InterruptEncoderA,          FALLING);
-  attachInterrupt(digitalPinToInterrupt(PB_ENCODER_B),  InterruptEncoderB,          FALLING);
 }
 
 void LoopSwitch(void)
@@ -322,8 +289,11 @@ void LoopSwitch(void)
   }
 
   static unsigned long last_message_time = ULONG_MAX;
+
+  long encoder_pos;
+  encoder_pos = DeltaEncoder.read();
   
-  if (Encoder != 0)
+  if (encoder_pos != 0)
   {
     if (last_message_time + DELTA_INTVL_MS <= millis())
     {
@@ -334,7 +304,7 @@ void LoopSwitch(void)
       if (is_new_tid)
           delta = 0;
 
-      delta += Encoder;
+      delta += encoder_pos;
       Mesh_SendGenericDeltaSet(LightLcClient1InstanceIdx,
                                DELTA_STEP_VALUE * delta,
                                is_new_tid,
@@ -346,7 +316,7 @@ void LoopSwitch(void)
       else
         DEBUG_INTERFACE.printf("Delta Start %d \n\n", delta);
 
-      Encoder                 = 0;
+      DeltaEncoder.write(0);
       last_delta_message_time = millis();
       last_message_time       = millis();
     }

@@ -56,7 +56,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define UART_CMD_SOFTWARE_RESET_RESPONSE    0x18u
 #define UART_CMD_SENSOR_UPDATE_RESPONSE     0x19u
 #define UART_CMD_DEVICE_UUID_REQUEST        0x1Au
-#define UART_CMD_DEVICE_UUID_RESONSE        0x1Bu
+#define UART_CMD_DEVICE_UUID_RESPONSE       0x1Bu
+#define UART_CMD_SET_FAULT_REQUEST          0x1Cu
+#define UART_CMD_SET_FAULT_RESPONSE         0x1Du
+#define UART_CMD_CLEAR_FAULT_REQUEST        0x1Eu
+#define UART_CMD_CLEAR_FAULT_RESPONSE       0x1Fu
+#define UART_CMD_START_TEST_REQ             0x20u
+#define UART_CMD_START_TEST_RESP            0x21u
+#define UART_CMD_TEST_FINISHED_REQ          0x22u
+#define UART_CMD_TEST_FINISHED_RESP         0x23u
 
 
 /**< CRC configuration */
@@ -89,6 +97,12 @@ struct RxFrame_t
   uint8_t cmd;
   uint8_t p_payload[MAX_PAYLOAD_SIZE];
 };
+
+/********************************************
+ * STATIC VARIABLES                         *
+ ********************************************/
+
+static bool UART_PingsEnabled = true; /**< If true, device will send and respond to pings. Default it should work */
 
 /********************************************
  * LOCAL FUNCTIONS PROTOTYPES               *
@@ -149,14 +163,32 @@ void UART_Init(void)
   while(!UART_INTERFACE);
 }
 
+void UART_EnablePings(void)
+{
+  DEBUG_INTERFACE.println("Pings enabled \n");
+  UART_PingsEnabled = true;
+}
+
+void UART_DisablePings(void)
+{
+  DEBUG_INTERFACE.println("Pings disabled \n");
+  UART_PingsEnabled = false;
+}
+
 void UART_SendPingRequest(void)
 {
-  UARTInternal_Send(0, UART_CMD_PING_REQUEST, NULL);
+  if(UART_PingsEnabled)
+  {
+    UARTInternal_Send(0, UART_CMD_PING_REQUEST, NULL);
+  }
 }
 
 void UART_SendPongResponse(void)
 {
-  UARTInternal_Send(0, UART_CMD_PONG_RESPONSE, NULL);
+  if(UART_PingsEnabled)
+  {
+    UARTInternal_Send(0, UART_CMD_PONG_RESPONSE, NULL);
+  }
 }
 
 void UART_SendSoftwareResetRequest(void)
@@ -182,6 +214,26 @@ void UART_SendSensorUpdateRequest(uint8_t * p_payload, uint8_t len)
 void UART_StartNodeRequest(void)
 {
   UARTInternal_Send(0, UART_CMD_START_NODE_REQUEST, NULL);
+}
+
+void UART_SendSetFaultRequest(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_SET_FAULT_REQUEST, p_payload);
+}
+
+void UART_SendClearFaultRequest(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_CLEAR_FAULT_REQUEST, p_payload);
+}
+
+void UART_SendTestStartResponse(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_START_TEST_RESP, p_payload);
+}
+
+void UART_SendTestFinishedRequest(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_TEST_FINISHED_REQ, p_payload);
 }
 
 void UART_ProcessIncomingCommand(void)
@@ -230,6 +282,11 @@ void UART_ProcessIncomingCommand(void)
     case UART_CMD_ERROR:
     {
       ProcessError(rx_frame.p_payload, rx_frame.len);
+      break;
+    }
+    case UART_CMD_START_TEST_REQ:
+    {
+      ProcessStartTest(rx_frame.p_payload, rx_frame.len);
       break;
     }
   }
@@ -362,6 +419,10 @@ static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t * buf
     "SensorUpdateResponse",
     "DeviceUUIDRequest",
     "DeviceUUIDResponse",
+    "SetFaultRequest",
+    "SetFaultResponse",
+    "ClearFaultRequest",
+    "ClearFaultResponse"
   };
 
   DEBUG_INTERFACE.printf("%s %s command\n", dir, (cmd < ARRAY_SIZE(cmdName)) ? cmdName[cmd] : "Unknown");
@@ -373,7 +434,7 @@ static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t * buf
     DEBUG_INTERFACE.printf("0x%02X ", buf[i]);
   }
   DEBUG_INTERFACE.println();
-  DEBUG_INTERFACE.printf("\t CRC: 0x%02X%02X\n", lowByte(crc), highByte(crc));
+  DEBUG_INTERFACE.printf("\t CRC: 0x%02X%02X\n\n", lowByte(crc), highByte(crc));
 }
 
 static uint16_t CalcCRC16(uint8_t len, uint8_t cmd, uint8_t * data)

@@ -24,14 +24,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ********************************************/
 
 #include "Config.h"
+#include "MCU_Health.h"
 #include "MCU_Lightness.h"
 #include "MCU_Sensor.h"
+// #include "MCU_DFU.h"
 #include "Mesh.h"
 #include "UART.h"
 #include <TimerOne.h>
 #include <TimerThree.h>
 #include <math.h>
 
+/********************************************
+ * LOCAL #define CONSTANTS AND MACROS       *
+ ********************************************/
+ 
 /********************************************
  * EXPORTED TYPES DEFINITIONS               *
  ********************************************/
@@ -124,6 +130,19 @@ void ProcessAttention(uint8_t * p_payload, uint8_t len);
 void ProcessError(uint8_t * p_payload, uint8_t len);
 
 /*
+ *  Process Start Test Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void ProcessStartTest(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Timer3 Tick
+ */
+void Timer3Tick(void);
+
+/*
  *  Indicate attention
  */
 void IndicateAttention(void);
@@ -151,10 +170,10 @@ void SetupDebug(void)
 
 void SetupAttention(void)
 {
-  pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_LED_STATUS, OUTPUT);
 
-  Timer3.initialize(ATTENTION_TIME_US);
-  Timer3.attachInterrupt(IndicateAttention);
+  Timer3.initialize(TIMER_THREE_PERIOD);
+  Timer3.attachInterrupt(Timer3Tick);
 }
 
 void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
@@ -207,6 +226,13 @@ void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
     ALS_SAMPLING_FUNCTION,
     ALS_MEASUREMENT_PERIOD,
     ALS_UPDATE_INTERVAL,
+
+    // Health Server
+    lowByte(MESH_MODEL_ID_HEALTH_SERVER),
+    highByte(MESH_MODEL_ID_HEALTH_SERVER),
+    0x01,
+    lowByte(SILVAIR_ID),
+    highByte(SILVAIR_ID),
   };
 
   UART_SendCreateInstancesRequest(model_ids, sizeof(model_ids));
@@ -259,6 +285,12 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
         SetSensorServerALSIdx(current_model_id_instance_index);
       }
     }
+
+    if (model_id == MESH_MODEL_ID_HEALTH_SERVER)
+    {
+      uint16_t current_model_id_instance_index = index/2;
+      SetHealthServerIdx(current_model_id_instance_index);
+    }
   }
 
   if (GetLightnessServerIdx() == INSTANCE_INDEX_UNKNOWN)
@@ -281,6 +313,13 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
     DEBUG_INTERFACE.println("Sensor server (ALS) model id not found in init node message");
     return;
   }
+
+   if (GetHealthServerIdx() == INSTANCE_INDEX_UNKNOWN)
+   {
+     ModemState = MODEM_STATE_UNKNOWN;
+     DEBUG_INTERFACE.println("Health Server model id not found in init node message");
+     return;
+   }
 
   UART_StartNodeRequest();
 }
@@ -305,20 +344,29 @@ void ProcessAttention(uint8_t * p_payload, uint8_t len)
   if (!AttentionState)
   {
     AttentionLedValue = false;
-    digitalWrite(PIN_LED, AttentionLedValue);
+    digitalWrite(PIN_LED_STATUS, AttentionLedValue);
   }
 }
-
+ 
 void ProcessError(uint8_t * p_payload, uint8_t len)
 {
   DEBUG_INTERFACE.printf("Error %d\n\n.", p_payload[0]);
 }
 
+void Timer3Tick(void)
+{
+  IndicateAttention();
+  IndicateHealth();
+}
+
 void IndicateAttention(void)
 {
-  AttentionLedValue = AttentionState ? !AttentionLedValue : false;
-  digitalWrite(PIN_LED, AttentionLedValue);
-  IndicateAttentionLightness(AttentionState, AttentionLedValue);
+  if(!IsTestInProgress())
+  {
+    AttentionLedValue = AttentionState ? !AttentionLedValue : false;
+    digitalWrite(PIN_LED_STATUS, AttentionLedValue);
+    IndicateAttentionLightness(AttentionState, AttentionLedValue);
+  }
 }
 
 void setup(void)
@@ -326,6 +374,7 @@ void setup(void)
   SetupDebug();
   DEBUG_INTERFACE.println("Server Sample.\n");
   SetupAttention();
+  SetupHealth();
 
   SetupLightnessServer();
   SetupSensorServer();
@@ -337,6 +386,7 @@ void setup(void)
 void loop(void)
 {
   UART_ProcessIncomingCommand();
+   LoopHealth();
   if (MODEM_STATE_NODE != ModemState) return;
 
   LoopSensorSever();

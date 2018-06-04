@@ -21,4 +21,4 @@
 
 ## Troubleshooting tips:
 - Make sure you have proper serial port selected in Arduino IDE: Tools -> Port -> COMx
-- You can read debug console in Arduino IDE: Tools -> Serial Monitor (11520 baud)
+- You can read debug console in Arduino IDE: Tools -> Serial Monitor (115200 baud)

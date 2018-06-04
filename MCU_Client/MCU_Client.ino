@@ -166,7 +166,7 @@ void SetupDebug(void)
 
 void SetupAttention(void)
 {
-  pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_LED_STATUS, OUTPUT);
 
   Timer3.initialize(ATTENTION_TIME_US);
   Timer3.attachInterrupt(IndicateAttention);
@@ -310,7 +310,7 @@ void ProcessFirmwareVersion(uint8_t * p_payload, uint8_t len)
 void IndicateAttention(void)
 {
   AttentionLedValue = AttentionState ? !AttentionLedValue : false;
-  digitalWrite(PIN_LED, AttentionLedValue);
+  digitalWrite(PIN_LED_STATUS, AttentionLedValue);
 }
 
 void PrintVersionOnLCD(void)
