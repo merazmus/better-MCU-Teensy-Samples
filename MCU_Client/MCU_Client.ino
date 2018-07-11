@@ -27,19 +27,21 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "LCD.h"
 #include "MCU_Sensor.h"
 #include "MCU_Switch.h"
+#include "MCU_DFU.h"
 #include "Mesh.h"
 #include "UART.h"
 #include <TimerThree.h>
 #include <limits.h>
+#include <string.h>
 
 /********************************************
  * EXPORTED #define CONSTANTS AND MACROS    *
  ********************************************/
 
-#define FIRMWARE_VERSION_EXPECTED_LEN     6
-#define FIRMWARE_VERSION_VID_OFFSET_LOW   4
-#define FIRMWARE_VERSION_VID_OFFSET_HIGH  5
-#define FIRMWARE_VERSION_VID_UNKNOWN      0xFFFF
+#define MODEM_FIRMWARE_VERSION_EXPECTED_LEN     6
+#define MODEM_FIRMWARE_VERSION_VID_OFFSET_LOW   4
+#define MODEM_FIRMWARE_VERSION_VID_OFFSET_HIGH  5
+#define MODEM_FIRMWARE_VERSION_VID_UNKNOWN      0xFFFF
 
 /********************************************
  * EXPORTED TYPES DEFINITIONS               *
@@ -61,7 +63,9 @@ enum ModemState_t
 static bool         AttentionState    = false;
 static bool         AttentionLedValue = false;
 static ModemState_t ModemState        = MODEM_STATE_UNKNOWN;
-static uint16_t     McuVid            = FIRMWARE_VERSION_VID_UNKNOWN;
+static uint16_t     McuVid            = MODEM_FIRMWARE_VERSION_VID_UNKNOWN;
+static uint16_t     LastMcuVid        = MODEM_FIRMWARE_VERSION_VID_UNKNOWN;
+static bool         LastDfuInProgress = false;
 
 /********************************************
  * LOCAL FUNCTIONS PROTOTYPES               *
@@ -134,6 +138,16 @@ void ProcessAttention(uint8_t * p_payload, uint8_t len);
 void ProcessError(uint8_t * p_payload, uint8_t len);
 
 /*
+ *  Send Firmware Version Set request
+ */
+void SendFirmwareVersionSet(void);
+
+/*
+ *  Process Firmware Version set response
+ */
+void ProcessFirmwareVersionSet(void);
+
+/*
  *  Indicate attention
  */
 void IndicateAttention(void);
@@ -142,6 +156,21 @@ void IndicateAttention(void);
  *  Print current UART Modem state on LCD
  */
 void PrintStateOnLCD(void);
+
+/*
+ *  Update everything on LCD
+ */
+void UpdateLCD(void);
+
+/*
+ *  Check if DFU state was changed.
+ */
+bool IsDfuStateChanged(void);
+
+/*
+ *  Check if MCU version id was changed.
+ */
+bool IsMcuVidChanged(void);
 
 /*
  *  Main Arduino setup
@@ -174,7 +203,7 @@ void SetupAttention(void)
 
 void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.println("Init Device State.\n");
+  INFO("Init Device State.\n");
   ModemState     = MODEM_STATE_INIT_DEVICE;
   AttentionState = false;
 
@@ -184,13 +213,13 @@ void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
 
   if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_LC_CLIENT))
   {
-    DEBUG_INTERFACE.println("Modem does not support Light Lightness Controler Client.\n");
+    INFO("Modem does not support Light Lightness Controler Client.\n");
     return;
   }
 
   if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_SENSOR_CLIENT))
   {
-    DEBUG_INTERFACE.println("Modem does not support Sensor Client.\n");
+    INFO("Modem does not support Sensor Client.\n");
     return;
   }
 
@@ -206,19 +235,20 @@ void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
     highByte(MESH_MODEL_ID_SENSOR_CLIENT),
   };
   
+  SendFirmwareVersionSet();
   UART_SendCreateInstancesRequest(model_ids, sizeof(model_ids));
-  UART_FirmwareVersionRequest();
+  UART_ModemFirmwareVersionRequest();
 }
 
 void ProcessEnterDevice(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.println("Device State.\n");
+  INFO("Device State.\n");
   ModemState = MODEM_STATE_DEVICE;
 }
 
 void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.println("Init Node State.\n");
+  INFO("Init Node State.\n");
   ModemState     = MODEM_STATE_INIT_NODE;
   AttentionState = false;
 
@@ -253,31 +283,32 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
   if (GetInstanceIdxSwitch1() == INSTANCE_INDEX_UNKNOWN)
   {
     ModemState = MODEM_STATE_UNKNOWN;
-    DEBUG_INTERFACE.println("First Light Lightness Controller Client model id not found in init node message");
+    INFO("First Light Lightness Controller Client model id not found in init node message\n");
     return;
   }
 
   if (GetInstanceIdxSwitch2() == INSTANCE_INDEX_UNKNOWN)
   {
     ModemState = MODEM_STATE_UNKNOWN;
-    DEBUG_INTERFACE.println("Second Light Lightness Controller Client model id not found in init node message");
+    INFO("Second Light Lightness Controller Client model id not found in init node message\n");
     return;
   }
 
   if (GetInstanceIdxSensor() == INSTANCE_INDEX_UNKNOWN)
   {
     ModemState = MODEM_STATE_UNKNOWN;
-    DEBUG_INTERFACE.println("Sensor Client model id not found in init node message");
+    INFO("Sensor Client model id not found in init node message\n");
     return;
   }
 
+  SendFirmwareVersionSet();
   UART_StartNodeRequest();
-  UART_FirmwareVersionRequest();
+  UART_ModemFirmwareVersionRequest();
 }
 
 void ProcessEnterNode(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.println("Node State.\n");
+  INFO("Node State.\n");
   ModemState = MODEM_STATE_NODE;
 }
 
@@ -288,22 +319,22 @@ void ProcessMeshCommand(uint8_t * p_payload, uint8_t len)
 
 void ProcessAttention(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.printf("Attention State %d\n\n.", p_payload[0]);
+  INFO("Attention State %d\n\n.", p_payload[0]);
   AttentionState = (p_payload[0] == 0x01);
 }
 
 void ProcessError(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.printf("Error %d\n\n.", p_payload[0]);
+  INFO("Error %d\n\n.", p_payload[0]);
 }
 
-void ProcessFirmwareVersion(uint8_t * p_payload, uint8_t len)
+void ProcessModemFirmwareVersion(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.println("Process Firmware Version");
-  if (len == FIRMWARE_VERSION_EXPECTED_LEN)
+  INFO("Process Modem Firmware Version\n");
+  if (len == MODEM_FIRMWARE_VERSION_EXPECTED_LEN)
   {
-    McuVid  = p_payload[FIRMWARE_VERSION_VID_OFFSET_LOW];
-    McuVid |= (uint16_t) p_payload[FIRMWARE_VERSION_VID_OFFSET_HIGH] << 8;
+    McuVid  = p_payload[MODEM_FIRMWARE_VERSION_VID_OFFSET_LOW];
+    McuVid |= (uint16_t) p_payload[MODEM_FIRMWARE_VERSION_VID_OFFSET_HIGH] << 8;
   }
 }
 
@@ -315,10 +346,11 @@ void IndicateAttention(void)
 
 void PrintVersionOnLCD(void)
 {
-  if(McuVid != FIRMWARE_VERSION_VID_UNKNOWN)
+  if(McuVid != MODEM_FIRMWARE_VERSION_VID_UNKNOWN)
   {
     char text[LCD_COLUMNS];
-    sprintf(text, "Build #%d", McuVid);
+    strcpy(text, "Build #");
+    itoa(McuVid, text + strlen(text), 10);
     WriteLineLCD(LCD_VERSION_LINE, text);
   }
 }
@@ -363,6 +395,39 @@ void PrintStateOnLCD(void)
   }
 }
 
+void UpdateLCD(void)
+{
+  PrintStateOnLCD();
+  
+  if(MCU_DFU_IsInProgress())
+  {
+    LoopDFU();
+  }
+
+  LoopLCD();
+}
+
+bool IsDfuStateChanged(void)
+{
+  return LastDfuInProgress ^ MCU_DFU_IsInProgress();
+}
+
+bool IsMcuVidChanged(void)
+{
+  return LastMcuVid ^ McuVid;
+}
+
+void SendFirmwareVersionSet(void)
+{
+  const char * p_firmware_version = FIRMWARE_VERSION;
+
+  UART_SendFirmwareVersionSetRequest((uint8_t *)p_firmware_version, strlen(p_firmware_version));
+}
+
+void ProcessFirmwareVersionSet(void)
+{
+}
+
 /********************************************
  * MAIN FUNCTION DEFINITIONS                *
  ********************************************/
@@ -378,16 +443,47 @@ void setup()
 
   UART_Init();
   UART_SendSoftwareResetRequest();
+
+  SetupDFU();
 }
 
 void loop()
 {
   UART_ProcessIncomingCommand();
-  PrintStateOnLCD();
-  LoopLCD();
 
-  if (MODEM_STATE_NODE != ModemState) return;
+  switch (ModemState)
+  {
+    case MODEM_STATE_UNKNOWN:
+    case MODEM_STATE_INIT_DEVICE:
+    case MODEM_STATE_INIT_NODE:
+      UpdateLCD();
+      break;
 
-  LoopSwitch();
-  LoopSensor();
+    case MODEM_STATE_DEVICE:
+    case MODEM_STATE_NODE:
+
+      if (IsDfuStateChanged())
+      {
+        UpdateLCD();
+        RepaintLCD();
+
+        LastDfuInProgress = MCU_DFU_IsInProgress();
+      }
+
+      if (!MCU_DFU_IsInProgress())
+      {
+        UpdateLCD();
+        LoopSwitch();
+        LoopSensor();
+      }
+      break;
+  }
+
+  if (IsMcuVidChanged())
+  {
+    UpdateLCD();
+    RepaintLCD();
+
+    LastMcuVid = McuVid;
+  }
 }

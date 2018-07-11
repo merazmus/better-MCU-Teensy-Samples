@@ -37,11 +37,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PIN_PIR                     5            /**< Defines PIR sensor location */
 #define PIN_ALS                     17           /**< Defines ALS sensor location */
 
-#define ALS_CONVERSION_COEFFICIENT  16UL         /**< Defines light sensor coefficient */
+#define ALS_CONVERSION_COEFFICIENT  5UL          /**< Defines light sensor coefficient [centilux / millivolt]*/
 #define PIR_DEBOUNCE_TIME_MS        20           /**< Defines PIR debounce time in milliseconds */
 #define PIR_INERTIA_MS              4000         /**< Defines PIR inertia in milliseconds */
 #define SENSOR_UPDATE_INTV          1000         /**< Defines sensor update in milliseconds */
-#define ALS_REPORT_THRESHOLD        500
+#define ALS_REPORT_THRESHOLD        500          /**< Defines sensor threshold in centilux */
 
 /********************************************
  * STATIC VARIABLES                         *
@@ -103,23 +103,26 @@ void LoopSensorSever(void)
     };
     UART_SendSensorUpdateRequest(pir_buf, sizeof(pir_buf));
 
-    uint32_t als = ALS_CONVERSION_COEFFICIENT * analogRead(PIN_ALS);
+    uint32_t als_adc_val    = analogRead(PIN_ALS);
+    uint32_t als_millivolts = (als_adc_val * ANALOG_REFERENCE_VOLTAGE_MV) / ANALOG_MAX;
+    uint32_t als_centilux   = als_millivolts * ALS_CONVERSION_COEFFICIENT;
+    
     /* 
      * Sensor server can be configured to report on change. In one mode report is triggered by
      * percentage change from the actual value. In case of small measurement, it can generate heavy traffic.
      */
-    if (als < ALS_REPORT_THRESHOLD)
+    if (als_centilux < ALS_REPORT_THRESHOLD)
     {
-      als = 0;
+      als_centilux = 0;
     }
 
     uint8_t als_buf[] = {
       SensorServerAlsIdx,
       lowByte(MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL),
       highByte(MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL),
-      (uint8_t)als,
-      (uint8_t)(als >> 8),
-      (uint8_t)(als >> 16),
+      (uint8_t)als_centilux,
+      (uint8_t)(als_centilux >> 8),
+      (uint8_t)(als_centilux >> 16),
     };
 
     UART_SendSensorUpdateRequest(als_buf, sizeof(als_buf));

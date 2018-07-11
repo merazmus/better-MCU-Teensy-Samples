@@ -23,10 +23,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * INCLUDES                                *
  *******************************************/
 
+#include "LCD.h"
 #include "Arduino.h"
 #include "Config.h"
+#include "UART.h"
 #include "LiquidCrystal_I2C.h"
-#include <limits.h>
 #include <string.h>
 
 /********************************************
@@ -65,7 +66,7 @@ static void ReinitLCD(void);
 
 void SetupLCD(void)
 {
-  DEBUG_INTERFACE.println("LCD initialization.\n");
+  INFO("LCD initialization.\n");
   Lcd.begin(LCD_COLUMNS, LCD_ROWS);
   pinMode(PB_REINIT, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(PB_REINIT), InterruptLcdPBClick, FALLING);
@@ -77,13 +78,13 @@ void ClearLCD(void)
   UpToDate = false;
 }
 
-void WriteLineLCD(size_t line, char * text)
+void WriteLineLCD(size_t line, const char * text)
 {
   if (strcmp(LcdBuffer[line], text) != 0)
   {
     if (strlen(text) > LCD_COLUMNS)
     {
-      DEBUG_INTERFACE.printf("Trying to write too long string on LCD: %s", text);
+      INFO("Trying to write too long string on LCD: %s", text);
       return;
     }
     strcpy(LcdBuffer[line], text);
@@ -95,14 +96,7 @@ void LoopLCD(void)
 {
   if (!UpToDate && (LcdTimestamp + LCD_UPDATE_INTV) < millis())
   {
-    Lcd.clear();
-    for (int row = 0; row < LCD_ROWS; row++)
-    {
-      Lcd.setCursor(0, row);
-      Lcd.print(LcdBuffer[row]);
-    }
-    LcdTimestamp = millis();
-    UpToDate     = true;
+    RepaintLCD();
   }
 
   if (LcdNeedReinit)
@@ -111,6 +105,18 @@ void LoopLCD(void)
     LcdNeedReinit = false;
     UpToDate      = false;
   }
+}
+
+void RepaintLCD(void)
+{
+  Lcd.clear();
+  for (int row = 0; row < LCD_ROWS; row++)
+  {
+    Lcd.setCursor(0, row);
+    Lcd.print(LcdBuffer[row]);
+  }
+  LcdTimestamp = millis();
+  UpToDate     = true;
 }
 
 /********************************************

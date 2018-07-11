@@ -27,12 +27,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "MCU_Health.h"
 #include "MCU_Lightness.h"
 #include "MCU_Sensor.h"
-// #include "MCU_DFU.h"
+#include "MCU_DFU.h"
 #include "Mesh.h"
 #include "UART.h"
 #include <TimerOne.h>
 #include <TimerThree.h>
 #include <math.h>
+#include <string.h>
 
 /********************************************
  * LOCAL #define CONSTANTS AND MACROS       *
@@ -138,6 +139,16 @@ void ProcessError(uint8_t * p_payload, uint8_t len);
 void ProcessStartTest(uint8_t * p_payload, uint8_t len);
 
 /*
+ *  Send Firmware Version Set request
+ */
+void SendFirmwareVersionSet(void);
+
+/*
+ *  Process Firmware Version set response
+ */
+void ProcessFirmwareVersionSet(void);
+
+/*
  *  Timer3 Tick
  */
 void Timer3Tick(void);
@@ -178,19 +189,19 @@ void SetupAttention(void)
 
 void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.println("Init Device State.");
+  INFO("Init Device State.\n");
   ModemState     = MODEM_STATE_INIT_DEVICE;
   AttentionState = false;
 
   if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_LC_SERVER))
   {
-    DEBUG_INTERFACE.println("Modem does not support Light Lightness Controller Server.\n");
+    INFO("Modem does not support Light Lightness Controller Server.\n");
     return;
   }
 
   if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_SENSOR_SERVER))
   {
-    DEBUG_INTERFACE.println("Modem does not support Sensor Server.\n");
+    INFO("Modem does not support Sensor Server.\n");
     return;
   }
 
@@ -235,12 +246,13 @@ void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
     highByte(SILVAIR_ID),
   };
 
+  SendFirmwareVersionSet();
   UART_SendCreateInstancesRequest(model_ids, sizeof(model_ids));
 }
 
 void ProcessEnterDevice(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.println("Device State.\n");
+  INFO("Device State.\n");
 
   // Setting Lightness value in Device state to 50 % of maximum lightness
   ProcessTargetLightness(0xFFFF/2, 0); 
@@ -250,7 +262,7 @@ void ProcessEnterDevice(uint8_t * p_payload, uint8_t len)
 
 void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.println("Init Node State.\n");
+  INFO("Init Node State.\n");
   ModemState     = MODEM_STATE_INIT_NODE;
   AttentionState = false;
 
@@ -296,37 +308,38 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
   if (GetLightnessServerIdx() == INSTANCE_INDEX_UNKNOWN)
   {
     ModemState = MODEM_STATE_UNKNOWN;
-    DEBUG_INTERFACE.println("Light Lightness Server model id not found in init node message");
+    INFO("Light Lightness Server model id not found in init node message\n");
     return;
   }
 
   if (GetSensorServerPIRIdx() == INSTANCE_INDEX_UNKNOWN)
   {
     ModemState = MODEM_STATE_UNKNOWN;
-    DEBUG_INTERFACE.println("Sensor server (PIR) model id not found in init node message");
+    INFO("Sensor server (PIR) model id not found in init node message\n");
     return;
   }
 
   if (GetSensorServerALSIdx() == INSTANCE_INDEX_UNKNOWN)
   {
     ModemState = MODEM_STATE_UNKNOWN;
-    DEBUG_INTERFACE.println("Sensor server (ALS) model id not found in init node message");
+    INFO("Sensor server (ALS) model id not found in init node message\n");
     return;
   }
 
    if (GetHealthServerIdx() == INSTANCE_INDEX_UNKNOWN)
    {
      ModemState = MODEM_STATE_UNKNOWN;
-     DEBUG_INTERFACE.println("Health Server model id not found in init node message");
+     INFO("Health Server model id not found in init node message\n");
      return;
    }
 
+  SendFirmwareVersionSet();
   UART_StartNodeRequest();
 }
 
 void ProcessEnterNode(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.println("Node State.\n");
+  INFO("Node State.\n");
   ModemState = MODEM_STATE_NODE;
   
   Mesh_SendLightLightnessGet(GetLightnessServerIdx());
@@ -339,7 +352,7 @@ void ProcessMeshCommand(uint8_t * p_payload, uint8_t len)
 
 void ProcessAttention(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.printf("Attention State %d\n\n.", p_payload[0]);
+  INFO("Attention State %d\n\n.", p_payload[0]);
   AttentionState = (p_payload[0] == 0x01);
   if (!AttentionState)
   {
@@ -350,7 +363,7 @@ void ProcessAttention(uint8_t * p_payload, uint8_t len)
  
 void ProcessError(uint8_t * p_payload, uint8_t len)
 {
-  DEBUG_INTERFACE.printf("Error %d\n\n.", p_payload[0]);
+  INFO("Error %d\n\n.", p_payload[0]);
 }
 
 void Timer3Tick(void)
@@ -369,10 +382,21 @@ void IndicateAttention(void)
   }
 }
 
+void SendFirmwareVersionSet(void)
+{
+  const char * p_firmware_version = FIRMWARE_VERSION;
+
+  UART_SendFirmwareVersionSetRequest((uint8_t *)p_firmware_version, strlen(p_firmware_version));
+}
+
+void ProcessFirmwareVersionSet(void)
+{
+}
+
 void setup(void)
 {
   SetupDebug();
-  DEBUG_INTERFACE.println("Server Sample.\n");
+  INFO("Server Sample.\n");
   SetupAttention();
   SetupHealth();
 
@@ -381,13 +405,21 @@ void setup(void)
 
   UART_Init();
   UART_SendSoftwareResetRequest();
+
+  SetupDFU();
 }
 
 void loop(void)
 {
   UART_ProcessIncomingCommand();
-   LoopHealth();
-  if (MODEM_STATE_NODE != ModemState) return;
 
-  LoopSensorSever();
+  if (!MCU_DFU_IsInProgress())
+  {
+    LoopHealth();
+
+    if (MODEM_STATE_NODE == ModemState)
+    {
+      LoopSensorSever();
+    }
+  }
 }

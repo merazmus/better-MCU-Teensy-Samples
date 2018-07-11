@@ -120,10 +120,10 @@ void Mesh_SendLightLightnessControllerModeSet(uint8_t instance_idx, bool value, 
 /*
  *  Process ALS update
  *
- *  @param value       New ALS value
+ *  @param value_clux  New ALS value in clux
  *  @param src_addr    Source address
  */
-extern void ProcessPresentAmbientLightLevel(uint16_t src_addr, float value);
+extern void ProcessPresentAmbientLightLevel(uint16_t src_addr, uint32_t value_clux);
 
 /*
  *  Process PIR update

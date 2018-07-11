@@ -27,6 +27,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  ********************************************/
 
 #include "stdint.h"
+#include "Config.h"
 
 /********************************************
  * EXPORTED #define CONSTANTS AND MACROS    *
@@ -34,6 +35,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /**< Defines maximum data length in frame */
 #define MAX_PAYLOAD_SIZE 127
+
+#if LOG_INFO_ENABLE == 1
+  #define INFO(f_, ...) DEBUG_INTERFACE.printf((f_), ##__VA_ARGS__)
+#else
+  #define INFO(f_, ...)
+#endif
+
+#if LOG_DEBUG_ENABLE == 1
+  #define DEBUG(f_, ...) DEBUG_INTERFACE.printf((f_), ##__VA_ARGS__)
+#else
+  #define DEBUG(f_, ...)
+#endif
 
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
@@ -131,6 +144,67 @@ void UART_SendTestStartResponse(uint8_t * p_payload, uint8_t len);
 void UART_SendTestFinishedRequest(uint8_t * p_payload, uint8_t len);
 
 /*
+ *  Send Dfu Init Response command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void UART_SendDfuInitResponse(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Send Dfu Status Response command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void UART_SendDfuStatusResponse(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Send Dfu Page Create command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void UART_SendDfuPageCreateResponse(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Send Dfu Page Store Response command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void UART_SendDfuPageStoreResponse(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Send Dfu State Check Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void UART_SendDfuStateCheckRequest(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Send Dfu Cancel Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+void UART_SendDfuCancelRequest(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Flush UART
+ */
+void UART_Flush();
+
+/*
+ *  Send Firmware Version Set Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+*/
+void UART_SendFirmwareVersionSetRequest(uint8_t * p_payload, uint8_t len);
+
+/*
  *  Receive and process incoming UART command
  */
 void UART_ProcessIncomingCommand(void);
@@ -197,5 +271,67 @@ extern void ProcessError(uint8_t * p_payload, uint8_t len);
  *  @param len           Payload len
  */
 extern void ProcessStartTest(uint8_t * p_payload, uint8_t len);
+
+/*
+<<<<<<< HEAD
+ *  Process Dfu Init Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+extern void ProcessDfuInitRequest(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Process Dfu Status Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+extern void ProcessDfuStatusRequest(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Process Dfu Page Create Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+extern void ProcessDfuPageCreateRequest(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Process Dfu Write Data Event command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+extern void ProcessDfuWriteDataEvent(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Process Dfu Pahe Store Request command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+extern void ProcessDfuPageStoreRequest(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Process Dfu State Check Response command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+extern void ProcessDfuStateCheckResponse(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Process Dfu Cancel Response command
+ *
+ *  @param * p_payload   Command payload
+ *  @param len           Payload len
+ */
+extern void ProcessDfuCancelResponse(uint8_t * p_payload, uint8_t len);
+
+/*
+ *  Process Firmware Version set response
+ */
+extern void ProcessFirmwareVersionSet(void);
 
 #endif  // UART_H_

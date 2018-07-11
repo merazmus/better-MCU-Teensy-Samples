@@ -238,10 +238,10 @@ void Mesh_ProcessMeshCommand(uint8_t * p_payload, size_t len)
   uint16_t mesh_cmd          = ((uint16_t)p_payload[index++]);
   mesh_cmd                  |= ((uint16_t)p_payload[index++] << 8);
 
-  DEBUG_INTERFACE.printf("Process Mesh Command [%d %d 0x%02X]\n",
-                         instance_index,
-                         instance_subindex,
-                         mesh_cmd);
+  INFO("Process Mesh Command [%d %d 0x%02X]\n",
+       instance_index,
+       instance_subindex,
+       mesh_cmd);
   switch (mesh_cmd)
   {
     case MESH_MESSAGE_SENSOR_STATUS:
@@ -439,7 +439,7 @@ static void MeshInternal_ProcessSensorStatus(uint8_t * p_payload, size_t len)
 {
   if (len < 2)
   {
-    DEBUG_INTERFACE.println("Received empty Sensor Status message");
+    INFO("Received empty Sensor Status message\n");
     return;
   }
 
@@ -448,7 +448,7 @@ static void MeshInternal_ProcessSensorStatus(uint8_t * p_payload, size_t len)
 
   if (len <= 2)
   {
-    DEBUG_INTERFACE.printf("Received empty Sensor Status message from: %d\n", src_addr);
+    INFO("Received empty Sensor Status message from: %d\n", src_addr);
     return;
   }
 
@@ -456,7 +456,7 @@ static void MeshInternal_ProcessSensorStatus(uint8_t * p_payload, size_t len)
   size_t index = 0;
   while (index < len)
   {
-    DEBUG_INTERFACE.printf("ProcessSensorStatus index: %d\n", index);
+    INFO("ProcessSensorStatus index: %d\n", index);
     if (p_payload[index] & SS_FORMAT_MASK)
     {
       size_t   message_len = (p_payload[index++] & SS_LONG_LEN_MASK) >> SS_LONG_LEN_OFFSET;
@@ -497,7 +497,7 @@ static void MeshInternal_ProcessSensorProperty(uint16_t  property_id,
     }
     default:
     {
-      DEBUG_INTERFACE.println("Invalid property id");
+      INFO("Invalid property id\n");
     }
   }
 }
@@ -506,7 +506,7 @@ static void MeshInternal_ProcessPresenceDetected(uint8_t * p_payload, size_t len
 {
   if (len != 0)
   {
-    DEBUG_INTERFACE.println("Invalid Length Sensor Status message");
+    INFO("Invalid Length Sensor Status message\n");
     return;
   }
 
@@ -519,7 +519,7 @@ static void MeshInternal_ProcessPresenceDetected(uint8_t * p_payload, size_t len
   }
   else
   {
-    DEBUG_INTERFACE.printf("Decoded Sensor Status message from 0x%04X, PRESENCE DETECTED with prohibited value\n", src_addr);
+    INFO("Decoded Sensor Status message from 0x%04X, PRESENCE DETECTED with prohibited value\n", src_addr);
   }
 }
 
@@ -529,7 +529,7 @@ static void MeshInternal_ProcessPresentAmbientLightLevel(uint8_t * p_payload,
 {
   if (len != 2)
   {
-    DEBUG_INTERFACE.println("Invalid Length Sensor Status message");
+    INFO("Invalid Length Sensor Status message\n");
     return;
   }
 
@@ -538,6 +538,5 @@ static void MeshInternal_ProcessPresentAmbientLightLevel(uint8_t * p_payload,
   value_clux         |= ((uint32_t)p_payload[index++] << 8);
   value_clux         |= ((uint32_t)p_payload[index++] << 16);
 
-  float value = ((float)value_clux) / 100;
-  ProcessPresentAmbientLightLevel(src_addr, value);
+  ProcessPresentAmbientLightLevel(src_addr, value_clux);
 }

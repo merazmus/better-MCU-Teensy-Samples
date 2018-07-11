@@ -32,8 +32,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * EXPORTED #define CONSTANTS AND MACROS    *
  ********************************************/
 
-#define LIGHTNESS_MIN                            0            /**< Defines lower range of light lightness */
-#define LIGHTNESS_MAX                            UINT16_MAX   /**< Defines upper range of light lightness */
+#define LIGHTNESS_MIN  0            /**< Defines lower range of light lightness */
+#define LIGHTNESS_MAX  UINT16_MAX   /**< Defines upper range of light lightness */
 
 /********************************************
  * FUNCTION PROTOTYPES                      *
@@ -78,6 +78,5 @@ void LoopLightnessServer(void);
  *  @param led_state           Attention led state
  */
 void IndicateAttentionLightness(bool attention_state, bool led_state);
-
 
 #endif  // MCU_LIGHTNESS_SERVER_H

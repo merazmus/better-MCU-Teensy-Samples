@@ -52,7 +52,7 @@ uint8_t GetInstanceIdxSensor(void);
  *  @param src_addr     Source address
  *  @param value        New sensor value
  */
-void ProcessPresentAmbientLightLevel(uint16_t src_addr, float value);
+void ProcessPresentAmbientLightLevel(uint16_t src_addr, uint32_t value_clux);
 
 /*
  *  Process PIR value update

@@ -19,46 +19,32 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef MCU_LCD_H
-#define MCU_LCD_H
+#ifndef MCU_DFU_H
+#define MCU_DFU_H
 
+/********************************************
+ * INCLUDES                                 *
+ ********************************************/
 
-/*******************************************
- * INCLUDES                                *
- *******************************************/
+#include <stdint.h>
+#include "Flasher.h"
 
-#include "stdlib.h"
+/********************************************
+ * EXPORTED #define CONSTANTS AND MACROS    *
+ ********************************************/
 
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
  ********************************************/
 
 /*
- *  Write line on LCD
- *
- *  @param line    Line number
- *  @param * text  Text to write
+ * Setup DFU
  */
-void WriteLineLCD(size_t line, const char * text);
+void SetupDFU(void);
 
 /*
- *  Clear LCD
+ * Get DFU state
  */
-void ClearLCD(void);
+bool MCU_DFU_IsInProgress(void);
 
-/*
- *  Repaint LCD
- */
-void RepaintLCD(void);
-
-/*
- *  Setup LCD hardware
- */
-void SetupLCD(void);
-
-/*
- *  LCD main function, should be called in Arduino main loop
- */
-void LoopLCD(void);
-
-#endif  // MCU_LCD
+#endif  // MCU_DFU_H

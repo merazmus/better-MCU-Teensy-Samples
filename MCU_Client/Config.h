@@ -23,12 +23,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define CONFIG_H_
 
 /********************************************
+ * INCLUDES                                 *
+ ********************************************/
+ 
+#include "Arduino.h"
+
+/********************************************
  * LOCAL #define CONSTANTS AND MACROS       *
  ********************************************/
 
+#define BUILD_NUMBER                "0000"                   /**< Defines firmware build number. */
+#define FIRMWARE_VERSION            "C" BUILD_NUMBER         /**< Defines firmware version. */
+#define DFU_VALIDATION_STRING       "client"                 /**< Defines string to be expected in app data */
+
 #define INSTANCE_INDEX_UNKNOWN      UINT8_MAX /**< Defines unknown instance index value. */
+
 #define ANALOG_MIN                  0         /**< Defines lower range of analog measurements. */
 #define ANALOG_MAX                  1023      /**< Defines uppper range of analog measurements. */
+#define ANALOG_REFERENCE_VOLTAGE_MV 3300      /**< Defines ADC reference voltage in millivolts */
 
 #define DEBUG_INTERFACE             (Serial)  /**< Defines serial port to print debug messages. */
 #define DEBUG_INTERFACE_BAUDRATE    115200    /**< Defines baudrate of debug interface. */
@@ -48,7 +60,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PIN_ENCODER_B               4   /**< Defines encoder B pin. */
 #define PIN_ANALOG                  9   /**< Defines analog measurement pin. */
 
-#define BUTTON_DEBOUNCE_TIME_MS     20      /**< Defines buttons debounce time in miliseconds. */
+#define BUTTON_DEBOUNCE_TIME_MS     20      /**< Defines buttons debounce time in milliseconds. */
 #define ENCODER_DEBOUNCE_TIME_US    300     /**< Defines encoder debounce time in microseconds. */
 #define ATTENTION_TIME_US           500000  /**< Defines attention state change time in microseconds. */
 #define DATA_VALIDITY_PERIOD_MS     3000    /**< Defines sensor data validity period. */
@@ -60,5 +72,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define LCD_VERSION_LINE            (LCD_DEVICE_STATE_LINE + 1) /**< Defines LCD line content. */
 #define LCD_SENSOR_PIR_LINE         (LCD_VERSION_LINE + 1)      /**< Defines LCD line content. */
 #define LCD_SENSOR_ALS_LINE         (LCD_SENSOR_PIR_LINE + 1)   /**< Defines LCD line content. */
+#define LCD_DFU_LINE                LCD_SENSOR_ALS_LINE         /**< Defines LCD line content. */
+
+#define LOG_INFO_ENABLE             0   /**< Enables INFO level logs */
+#define LOG_DEBUG_ENABLE            0   /**< Enables DEBUG level logs Enabling this make DFU impossible, due to implementation of UART in Arduino. */
 
 #endif // CONFIG_H_

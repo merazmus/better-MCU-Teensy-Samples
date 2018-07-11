@@ -19,46 +19,55 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef MCU_LCD_H
-#define MCU_LCD_H
+#ifndef CRC_H_
+#define CRC_H_
 
+/********************************************
+ * INCLUDES                                 *
+ ********************************************/
 
-/*******************************************
- * INCLUDES                                *
- *******************************************/
+#include <stdint.h>
+#include <inttypes.h>
+#include <stddef.h>
 
-#include "stdlib.h"
+/********************************************
+ * EXPORTED #define CONSTANTS AND MACROS    *
+ ********************************************/
+
+#define CRC16_INIT_VAL 0xFFFFu      /**< CRC16 init value */
+#define CRC32_INIT_VAL 0xFFFFFFFFu  /**< CRC32 init value */
 
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
  ********************************************/
 
 /*
- *  Write line on LCD
+ *  Calculate CRC16
  *
- *  @param line    Line number
- *  @param * text  Text to write
+ *  @param * data       Pointer to data
+ *  @param len          Data len
+ *  @param init_val     CRC init val
+ *  @return             Calculated CRC
  */
-void WriteLineLCD(size_t line, const char * text);
+uint16_t CalcCRC16(uint8_t * data, size_t len, uint16_t init_val);
 
 /*
- *  Clear LCD
+ *  Calculate CRC32
+ *
+ *  @param * data       Pointer to data
+ *  @param len          Data len
+ *  @param init_val     CRC init val
+ *  @return             Calculated CRC
  */
-void ClearLCD(void);
+uint32_t CalcCRC32(uint8_t * data, size_t len, uint32_t init_val);
 
 /*
- *  Repaint LCD
+ *  Calculate CRC32
+ *
+ *  @param * data       Pointer to data
+ *  @param len          Data len
+ *  @param * sha256     [out] calculated SHA256
  */
-void RepaintLCD(void);
+void CalcSHA256(uint8_t * data, size_t len, uint8_t * sha256);
 
-/*
- *  Setup LCD hardware
- */
-void SetupLCD(void);
-
-/*
- *  LCD main function, should be called in Arduino main loop
- */
-void LoopLCD(void);
-
-#endif  // MCU_LCD
+#endif  // CRC_H_

@@ -116,7 +116,7 @@ void Mesh_ProcessMeshCommand(uint8_t * p_payload, size_t len)
   uint16_t mesh_cmd          = ((uint16_t)p_payload[index++]);
   mesh_cmd                  |= ((uint16_t)p_payload[index++] << 8);
 
-  DEBUG_INTERFACE.printf("Process Mesh Command [%d %d 0x%02X]\n",
+  DEBUG("Process Mesh Command [%d %d 0x%02X]\n",
                          instance_index,
                          instance_subindex,
                          mesh_cmd);
@@ -165,7 +165,7 @@ static void MeshInternal_ProcessLightLightnessStatus(uint8_t * p_payload, size_t
     bool is_valid = MeshInternal_ConvertFromMeshFormatToMsTransitionTime(p_payload[index++], &transition_time_ms);
     if (!is_valid)
     {
-      DEBUG_INTERFACE.println("Rejected Transition Time");
+      INFO("Rejected Transition Time\n");
       return;
     }
   }

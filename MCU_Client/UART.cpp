@@ -26,58 +26,83 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "UART.h"
 #include "Arduino.h"
 #include "Config.h"
+#include "CRC.h"
 
 /********************************************
  * LOCAL #define CONSTANTS AND MACROS       *
  ********************************************/
 
 /**< UART Command Codes definitions */
-#define UART_CMD_PING_REQUEST               0x01u
-#define UART_CMD_PONG_RESPONSE              0x02u
-#define UART_CMD_INIT_DEVICE_EVENT          0x03u
-#define UART_CMD_CREATE_INSTANCES_REQUEST   0x04u
-#define UART_CMD_CREATE_INSTANCES_RESPONSE  0x05u
-#define UART_CMD_INIT_NODE_EVENT            0x06u
-#define UART_CMD_MESH_MESSAGE_REQUEST       0x07u
-#define UART_CMD_START_NODE_REQUEST         0x09u
-#define UART_CMD_START_NODE_RESPONSE        0x0Bu
-#define UART_CMD_FACTORY_RESET_REQUEST      0x0Cu
-#define UART_CMD_FACTORY_RESET_RESPONSE     0x0Du
-#define UART_CMD_FACTORY_RESET_EVENT        0x0Eu
-#define UART_CMD_MESH_MESSAGE_RESPONSE      0x0Fu
-#define UART_CMD_CURRENT_STATE_REQUEST      0x10u
-#define UART_CMD_CURRENT_STATE_RESPONSE     0x11u
-#define UART_CMD_ERROR                      0x12u
-#define UART_CMD_FIRMWARE_VERSION_REQUEST   0x13u
-#define UART_CMD_FIRMWARE_VERSION_RESPONSE  0x14u
-#define UART_CMD_SENSOR_UPDATE_REQUEST      0x15u
-#define UART_CMD_ATTENTION_EVENT            0x16u
-#define UART_CMD_SOFTWARE_RESET_REQUEST     0x17u
-#define UART_CMD_SOFTWARE_RESET_RESPONSE    0x18u
-#define UART_CMD_SENSOR_UPDATE_RESPONSE     0x19u
-#define UART_CMD_DEVICE_UUID_REQUEST        0x1Au
-#define UART_CMD_DEVICE_UUID_RESONSE        0x1Bu
+#define UART_CMD_PING_REQUEST                     0x01u
+#define UART_CMD_PONG_RESPONSE                    0x02u
+#define UART_CMD_INIT_DEVICE_EVENT                0x03u
+#define UART_CMD_CREATE_INSTANCES_REQUEST         0x04u
+#define UART_CMD_CREATE_INSTANCES_RESPONSE        0x05u
+#define UART_CMD_INIT_NODE_EVENT                  0x06u
+#define UART_CMD_MESH_MESSAGE_REQUEST             0x07u
+#define UART_CMD_START_NODE_REQUEST               0x09u
+#define UART_CMD_START_NODE_RESPONSE              0x0Bu
+#define UART_CMD_FACTORY_RESET_REQUEST            0x0Cu
+#define UART_CMD_FACTORY_RESET_RESPONSE           0x0Du
+#define UART_CMD_FACTORY_RESET_EVENT              0x0Eu
+#define UART_CMD_MESH_MESSAGE_RESPONSE            0x0Fu
+#define UART_CMD_CURRENT_STATE_REQUEST            0x10u
+#define UART_CMD_CURRENT_STATE_RESPONSE           0x11u
+#define UART_CMD_ERROR                            0x12u
+#define UART_CMD_MODEM_FIRMWARE_VERSION_REQUEST   0x13u
+#define UART_CMD_MODEM_FIRMWARE_VERSION_RESPONSE  0x14u
+#define UART_CMD_SENSOR_UPDATE_REQUEST            0x15u
+#define UART_CMD_ATTENTION_EVENT                  0x16u
+#define UART_CMD_SOFTWARE_RESET_REQUEST           0x17u
+#define UART_CMD_SOFTWARE_RESET_RESPONSE          0x18u
+#define UART_CMD_SENSOR_UPDATE_RESPONSE           0x19u
+#define UART_CMD_DEVICE_UUID_REQUEST              0x1Au
+#define UART_CMD_DEVICE_UUID_RESPONSE             0x1Bu
+#define UART_CMD_SET_FAULT_REQUEST                0x1Cu
+#define UART_CMD_SET_FAULT_RESPONSE               0x1Du
+#define UART_CMD_CLEAR_FAULT_REQUEST              0x1Eu
+#define UART_CMD_CLEAR_FAULT_RESPONSE             0x1Fu
+#define UART_CMD_START_TEST_REQ                   0x20u
+#define UART_CMD_START_TEST_RESP                  0x21u
+#define UART_CMD_TEST_FINISHED_REQ                0x22u
+#define UART_CMD_TEST_FINISHED_RESP               0x23u
+#define UART_CMD_FIRMWARE_VERSION_SET_REQ         0x24u
+#define UART_CMD_FIRMWARE_VERSION_SET_RESP        0x25u
 
+#define UART_CMD_DFU_INIT_REQ                     0x80u
+#define UART_CMD_DFU_INIT_RESP                    0x81u
+#define UART_CMD_DFU_STATUS_REQ                   0x82u
+#define UART_CMD_DFU_STATUS_RESP                  0x83u
+#define UART_CMD_DFU_PAGE_CREATE_REQ              0x84u
+#define UART_CMD_DFU_PAGE_CREATE_RESP             0x85u
+#define UART_CMD_DFU_WRITE_DATA_EVENT             0x86u
+#define UART_CMD_DFU_PAGE_STORE_REQ               0x87u
+#define UART_CMD_DFU_PAGE_STORE_RESP              0x88u
+#define UART_CMD_DFU_STATE_CHECK_REQ              0x89u
+#define UART_CMD_DFU_STATE_CHECK_RESP             0x8Au
+#define UART_CMD_DFU_CANCEL_REQ                   0x8Bu
+#define UART_CMD_DFU_CANCEL_RESP                  0x8Cu
 
-/**< CRC configuration */
-#define CRC_POLYNOMIAL                      0x8005u
-#define CRC_INIT_VAL                        0xFFFFu
+#define UART_CMD_DFU_OFFSET                       0x80
 
 /**< Preamble definition */
-#define PREAMBLE_BYTE_1                     0xAAu
-#define PREAMBLE_BYTE_2                     0x55u
+#define PREAMBLE_BYTE_1                           0xAAu
+#define PREAMBLE_BYTE_2                           0x55u
 
 /**< UART Message description */
-#define PREAMBLE_BYTE_1_OFFSET              0u
-#define PREAMBLE_BYTE_2_OFFSET              1u
-#define LEN_OFFSET                          2u
-#define CMD_OFFSET                          3u
-#define PAYLOAD_OFFSET                      4u
-#define CRC_BYTE_1_OFFSET(len)              (PAYLOAD_OFFSET+(len))
-#define CRC_BYTE_2_OFFSET(len)              (PAYLOAD_OFFSET+(len)+1)
+#define PREAMBLE_BYTE_1_OFFSET                    0u
+#define PREAMBLE_BYTE_2_OFFSET                    1u
+#define LEN_OFFSET                                2u
+#define CMD_OFFSET                                3u
+#define PAYLOAD_OFFSET                            4u
+#define CRC_BYTE_1_OFFSET(len)                    (PAYLOAD_OFFSET+(len))
+#define CRC_BYTE_2_OFFSET(len)                    (PAYLOAD_OFFSET+(len)+1)
 
 /** @brief Counts number of elements inside the array. */
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+/**< UART Ring buffer size */
+#define RING_BUFFER_SIZE 512
 
 /********************************************
  * EXPORTED TYPES DEFINITIONS               *
@@ -90,6 +115,21 @@ struct RxFrame_t
   uint8_t p_payload[MAX_PAYLOAD_SIZE];
 };
 
+typedef struct RingBuffer_Tag
+{
+  uint8_t * pBuf;
+  size_t    bufLen;
+  size_t    wr;
+  size_t    rd;
+} RingBuffer_T;
+
+/********************************************
+ * STATIC VARIABLES                         *
+ ********************************************/
+
+static uint8_t      uartBuffer[RING_BUFFER_SIZE];
+static RingBuffer_T ringBuffer;
+
 /********************************************
  * LOCAL FUNCTIONS PROTOTYPES               *
  ********************************************/
@@ -100,7 +140,12 @@ struct RxFrame_t
  *  @param rx_frame    Pointer to frame to be filled with received data
  *  @return            True if frame's CRC is valid, false otherwise
  */
-static bool UARTInternal_Receive(RxFrame_t * rx_frame);
+static bool ExtractFrameFromBuffer(RxFrame_t * rx_frame);
+
+/*
+ *  Receive and process data.
+ */
+static void UARTInternal_Receive();
 
 /*
  *  Send message over UART
@@ -129,15 +174,41 @@ static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t * buf
  *  @param cmd    Command code
  *  @param *data  Pointer to data buffer
  */
-static uint16_t CalcCRC16(uint8_t len, uint8_t cmd, uint8_t * data);
+static uint16_t UARTInternal_CalcCRC16(uint8_t len, uint8_t cmd, uint8_t * data);
 
 /*
- *  Add byte to calculated CRC
+ *  Initialize ring buffer.
  *
- *  @param data   New byte
- *  @param crc    Data length
+ *  @param pRingBuffer    Pointer to ring buffer instance @def RingBuffer_T
+ *  @param pBuf           Pointer to buffer.
+ *  @param bufLen         Length of the buffer.
+ *  @return               void
  */
-static uint16_t __calcCRC(uint8_t data, uint16_t crc);
+static void RingBuffer_Init(RingBuffer_T * pRingBuffer, uint8_t * pBuf, size_t bufLen);
+
+/*
+ *  Get information if any bytes are present in the ring buffer.
+ *
+ *  @param pRingBuffer    Pointer to ring buffer instance @def RingBuffer_T
+ *  @return               True if frame's CRC is valid, false otherwise
+ */
+static bool RingBuffer_AvailableBytes(RingBuffer_T * pRingBuffer);
+
+/*
+ *  Get information if any bytes are present in the ring buffer.
+ *
+ *  @param pRingBuffer    Pointer to ring buffer instance @def RingBuffer_T
+ *  @return               True if frame's CRC is valid, false otherwise
+ */
+static uint8_t RingBuffer_ReadByte(RingBuffer_T * pRingBuffer);
+
+/*
+ *  Write byte to ring buffer
+ *
+ *  @param pRingBuffer    Pointer to ring buffer instance @def RingBuffer_T
+ *  @param b              byte to write
+ */
+static void RingBuffer_WriteByte(RingBuffer_T * pRingBuffer, uint8_t b);
 
 /********************************************
  * EXPORTED FUNCTION DEFINITIONS            *
@@ -145,6 +216,8 @@ static uint16_t __calcCRC(uint8_t data, uint16_t crc);
 
 void UART_Init(void)
 {
+  RingBuffer_Init(&ringBuffer, uartBuffer, sizeof(uartBuffer));
+
   UART_INTERFACE.begin(UART_INTERFACE_BAUDRATE);
   while(!UART_INTERFACE);
 }
@@ -184,16 +257,58 @@ void UART_StartNodeRequest(void)
   UARTInternal_Send(0, UART_CMD_START_NODE_REQUEST, NULL);
 }
 
-void UART_FirmwareVersionRequest(void)
+void UART_ModemFirmwareVersionRequest(void)
 {
-  UARTInternal_Send(0, UART_CMD_FIRMWARE_VERSION_REQUEST, NULL);
+  UARTInternal_Send(0, UART_CMD_MODEM_FIRMWARE_VERSION_REQUEST, NULL);
+}
+
+void UART_SendDfuInitResponse(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_DFU_INIT_RESP, p_payload);
+}
+
+void UART_SendDfuStatusResponse(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_DFU_STATUS_RESP, p_payload);
+}
+
+void UART_SendDfuPageCreateResponse(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_DFU_PAGE_CREATE_RESP, p_payload);
+}
+
+void UART_SendDfuPageStoreResponse(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_DFU_PAGE_STORE_RESP, p_payload);
+}
+
+void UART_SendDfuStateCheckRequest(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_DFU_STATE_CHECK_REQ, p_payload);
+}
+
+void UART_SendDfuCancelRequest(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_DFU_CANCEL_REQ, p_payload);
+}
+
+void UART_Flush()
+{
+  UART_INTERFACE.flush();
+}
+
+void UART_SendFirmwareVersionSetRequest(uint8_t * p_payload, uint8_t len)
+{
+  UARTInternal_Send(len, UART_CMD_FIRMWARE_VERSION_SET_REQ, p_payload);
 }
 
 void UART_ProcessIncomingCommand(void)
 {
   static RxFrame_t rx_frame;
 
-  if (!UARTInternal_Receive(&rx_frame)) return;
+  UARTInternal_Receive();
+  
+  if (!ExtractFrameFromBuffer(&rx_frame)) return;
 
   switch (rx_frame.cmd)
   {
@@ -237,11 +352,98 @@ void UART_ProcessIncomingCommand(void)
       ProcessError(rx_frame.p_payload, rx_frame.len);
       break;
     }
-    case UART_CMD_FIRMWARE_VERSION_RESPONSE:
+    case UART_CMD_MODEM_FIRMWARE_VERSION_RESPONSE:
     {
-      ProcessFirmwareVersion(rx_frame.p_payload, rx_frame.len);
+      ProcessModemFirmwareVersion(rx_frame.p_payload, rx_frame.len);
       break;
     }
+    case UART_CMD_DFU_INIT_REQ:
+    {
+      ProcessDfuInitRequest(rx_frame.p_payload, rx_frame.len);
+      break;
+    }
+    case UART_CMD_DFU_STATUS_REQ:
+    {
+      ProcessDfuStatusRequest(rx_frame.p_payload, rx_frame.len);
+      break;
+    }
+    case UART_CMD_DFU_PAGE_CREATE_REQ:
+    {
+      ProcessDfuPageCreateRequest(rx_frame.p_payload, rx_frame.len);
+      break;
+    }
+    case UART_CMD_DFU_WRITE_DATA_EVENT:
+    {
+      ProcessDfuWriteDataEvent(rx_frame.p_payload, rx_frame.len);
+      break;
+    }
+    case UART_CMD_DFU_PAGE_STORE_REQ:
+    {
+      ProcessDfuPageStoreRequest(rx_frame.p_payload, rx_frame.len);
+      break;
+    }
+    case UART_CMD_DFU_STATE_CHECK_RESP:
+    {
+      ProcessDfuStateCheckResponse(rx_frame.p_payload, rx_frame.len);
+      break;
+    }
+    case UART_CMD_DFU_CANCEL_RESP:
+    {
+      ProcessDfuCancelResponse(rx_frame.p_payload, rx_frame.len);
+      break;
+    }
+    case UART_CMD_FIRMWARE_VERSION_SET_RESP:
+    {
+      ProcessFirmwareVersionSet();
+      break;
+    }
+  }
+}
+
+static void RingBuffer_Init(RingBuffer_T * pRingBuffer, uint8_t * pBuf, size_t bufLen)
+{
+  pRingBuffer->pBuf   = pBuf;
+  pRingBuffer->bufLen = bufLen;
+  pRingBuffer->wr     = 0;
+  pRingBuffer->rd     = 0;
+}
+
+static bool RingBuffer_Full(RingBuffer_T * pRingBuffer)
+{
+  return ((pRingBuffer->wr + 1) % pRingBuffer->bufLen) == pRingBuffer->rd;
+}
+
+static bool RingBuffer_Empty(RingBuffer_T * pRingBuffer)
+{
+  return pRingBuffer->wr == pRingBuffer->rd;
+}
+
+static bool RingBuffer_AvailableBytes(RingBuffer_T * pRingBuffer)
+{
+  return !RingBuffer_Empty(pRingBuffer);
+}
+
+static uint8_t RingBuffer_ReadByte(RingBuffer_T * pRingBuffer)
+{
+  uint8_t b = pRingBuffer->pBuf[(pRingBuffer->rd)++];
+
+  if (pRingBuffer->rd >= pRingBuffer->bufLen)
+  {
+    pRingBuffer->rd = 0;
+  }
+
+  return b;
+}
+
+static void RingBuffer_WriteByte(RingBuffer_T * pRingBuffer, uint8_t b)
+{
+  if (RingBuffer_Full(pRingBuffer)) return;
+  
+  pRingBuffer->pBuf[(pRingBuffer->wr)++] = b;
+
+  if (pRingBuffer->wr >= pRingBuffer->bufLen)
+  {
+    pRingBuffer->wr = 0;
   }
 }
 
@@ -249,66 +451,73 @@ void UART_ProcessIncomingCommand(void)
  * LOCAL FUNCTION DEFINITIONS               *
  *******************************************/
 
-static bool UARTInternal_Receive(RxFrame_t * rx_frame)
+void UARTInternal_Receive()
+{
+  while (UART_INTERFACE.available())
+  {
+    if (RingBuffer_Full(&ringBuffer)) return;
+
+    RingBuffer_WriteByte(&ringBuffer, UART_INTERFACE.read());
+  }
+}
+
+static bool ExtractFrameFromBuffer(RxFrame_t * rx_frame)
 {
   bool            isCRCValid = false;
   static uint16_t crc        = 0;
   static size_t   count      = 0;
 
-  while (UART_INTERFACE.available())
-  {
-    uint8_t received_byte = UART_INTERFACE.read();
-    if (count == PREAMBLE_BYTE_1_OFFSET)
-    {
-      if (received_byte == PREAMBLE_BYTE_1)
-      {
-        count++;
-      }
-      else
-      {
-        count = 0;
-      }
-    }
-    else if (count == PREAMBLE_BYTE_2_OFFSET)
-    {
-      if (received_byte == PREAMBLE_BYTE_2)
-      {
-        count++;
-      }
-      else
-      {
-        count = 0;
-      }
-    }
-    else if (count == LEN_OFFSET)
-    {
-      rx_frame->len = received_byte;
-      count++;
-    }
-    else if (count == CMD_OFFSET)
-    {
-      rx_frame->cmd = received_byte;
-      count++;
-    }
-    else if ((CMD_OFFSET < count) && (count < CRC_BYTE_1_OFFSET(rx_frame->len)))
-    {
-      rx_frame->p_payload[count - PAYLOAD_OFFSET] = received_byte;
-      count++;
-    }
-    else if (count == CRC_BYTE_1_OFFSET(rx_frame->len))
-    {
-      crc = received_byte;
-      count++;
-    }
-    else if (count == CRC_BYTE_2_OFFSET(rx_frame->len))
-    {
-      crc += ((uint16_t)received_byte) << 8;
-      isCRCValid = (crc == CalcCRC16(rx_frame->len, rx_frame->cmd, rx_frame->p_payload));
-      count      = 0;
+  if (!RingBuffer_AvailableBytes(&ringBuffer)) return isCRCValid;
+  
+  uint8_t received_byte = RingBuffer_ReadByte(&ringBuffer);
 
-      if (isCRCValid)
-        break;
+  if (count == PREAMBLE_BYTE_1_OFFSET)
+  {
+    if (received_byte == PREAMBLE_BYTE_1)
+    {
+      count++;
     }
+    else
+    {
+      count = 0;
+    }
+  }
+  else if (count == PREAMBLE_BYTE_2_OFFSET)
+  {
+    if (received_byte == PREAMBLE_BYTE_2)
+    {
+      count++;
+    }
+    else
+    {
+      count = 0;
+    }
+  }
+  else if (count == LEN_OFFSET)
+  {
+    rx_frame->len = received_byte;
+    count++;
+  }
+  else if (count == CMD_OFFSET)
+  {
+    rx_frame->cmd = received_byte;
+    count++;
+  }
+  else if ((CMD_OFFSET < count) && (count < CRC_BYTE_1_OFFSET(rx_frame->len)))
+  {
+    rx_frame->p_payload[count - PAYLOAD_OFFSET] = received_byte;
+    count++;
+  }
+  else if (count == CRC_BYTE_1_OFFSET(rx_frame->len))
+  {
+    crc = received_byte;
+    count++;
+  }
+  else if (count == CRC_BYTE_2_OFFSET(rx_frame->len))
+  {
+    crc       += ((uint16_t) received_byte) << 8;
+    isCRCValid = (crc == UARTInternal_CalcCRC16(rx_frame->len, rx_frame->cmd, rx_frame->p_payload));
+    count      = 0;
   }
 
   if (isCRCValid)
@@ -333,7 +542,7 @@ static void UARTInternal_Send(uint8_t len, uint8_t cmd, uint8_t * p_payload)
     UART_INTERFACE.write(p_payload[i]);
   }
 
-  crc = CalcCRC16(len, cmd, p_payload);
+  crc = UARTInternal_CalcCRC16(len, cmd, p_payload);
   UART_INTERFACE.write(lowByte(crc));
   UART_INTERFACE.write(highByte(crc));
 
@@ -342,6 +551,7 @@ static void UARTInternal_Send(uint8_t len, uint8_t cmd, uint8_t * p_payload)
 
 static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t * buf, uint16_t crc)
 {
+#if LOG_DEBUG_ENABLE == 1
   const char * cmdName[] = {
     "Unknown",
     "PingRequest",
@@ -362,8 +572,8 @@ static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t * buf
     "CurrentStateRequest",
     "CurrentStateResponse",
     "Error",
-    "FirmwareVersionRequest",
-    "FirmwareVersionResponse",
+    "ModemFirmwareVersionRequest",
+    "ModemFirmwareVersionResponse",
     "SensorUpdateRequest",
     "AttentionEvent",
     "SoftwareResetRequest",
@@ -371,49 +581,71 @@ static void PrintDebug(const char * dir, uint8_t len, uint8_t cmd, uint8_t * buf
     "SensorUpdateResponse",
     "DeviceUUIDRequest",
     "DeviceUUIDResponse",
+    "SetFaultRequest",
+    "SetFaultResponse",
+    "ClearFaultRequest",
+    "ClearFaultResponse",
+    "StartTestRequest",
+    "StartTestResponse",
+    "TestFinishedRequest",
+    "TestFinishedResponse",
+    "FirmwareVersionSetRequest",
+    "FirmwareVersionSetResponse"
   };
 
-  DEBUG_INTERFACE.printf("%s %s command\n", dir, (cmd < ARRAY_SIZE(cmdName)) ? cmdName[cmd] : "Unknown");
-  DEBUG_INTERFACE.printf("\t Len: 0x%02X\n", len);
-  DEBUG_INTERFACE.printf("\t Cmd: 0x%02X\n", cmd);
-  DEBUG_INTERFACE.printf("\t Data: ");
-  for (size_t i = 0; i < len; i++)
+  const char * dfuCmdName[] = {
+    "DfuInitRequest",
+    "DfuInitResponse",
+    "DfuStatusRequest",
+    "DfuStatusResponse",
+    "DfuPageCreateRequest",
+    "DfuPageCreateResponse",
+    "DfuWriteDataEvent",
+    "DfuPageStoreRequest",
+    "DfuPageStoreResponse",
+    "DfuStateCheckRequest",
+    "DfuStateCheckResponse",
+    "DfuCancelRequest",
+    "DfuCancelResponse"
+  };
+
+  const char unknown_command_name[] = "Unknown";
+
+  const char * command_name;
+  if(cmd < ARRAY_SIZE(cmdName))
   {
-    DEBUG_INTERFACE.printf("0x%02X ", buf[i]);
+    command_name = cmdName[cmd];
   }
-  DEBUG_INTERFACE.println();
-  DEBUG_INTERFACE.printf("\t CRC: 0x%02X%02X\n", lowByte(crc), highByte(crc));
-}
-
-static uint16_t CalcCRC16(uint8_t len, uint8_t cmd, uint8_t * data)
-{
-  uint16_t crc = CRC_INIT_VAL;
-  crc          = __calcCRC(len, crc);
-  crc          = __calcCRC(cmd, crc);
-
-  for (size_t i = 0; i < len; i++)
+  else
   {
-    crc = __calcCRC(data[i], crc);
-  }
-
-  return crc;
-}
-
-static uint16_t __calcCRC(uint8_t data, uint16_t crc)
-{
-  uint8_t i;
-  for (i = 0; i < 8; i++)
-  {
-    if (((crc & 0x8000) >> 8) ^ (data & 0x80))
+    if(cmd >= UART_CMD_DFU_OFFSET && cmd < UART_CMD_DFU_OFFSET + ARRAY_SIZE(dfuCmdName))
     {
-      crc = (crc << 1) ^ CRC_POLYNOMIAL;
+      command_name = dfuCmdName[cmd - UART_CMD_DFU_OFFSET];
     }
     else
     {
-      crc = (crc << 1);
+      command_name = unknown_command_name;
     }
-    data <<= 1;
   }
 
+  DEBUG("%s %s command\n", dir, command_name);
+  DEBUG("\t Len: 0x%02X\n", len);
+  DEBUG("\t Cmd: 0x%02X\n", cmd);
+  DEBUG("\t Data: ");
+  for (size_t i = 0; i < len; i++)
+  {
+    DEBUG("0x%02X ", buf[i]);
+  }
+  DEBUG("\n");
+  DEBUG("\t CRC: 0x%02X%02X\n\n", lowByte(crc), highByte(crc));
+#endif
+}
+
+static uint16_t UARTInternal_CalcCRC16(uint8_t len, uint8_t cmd, uint8_t * data)
+{
+  uint16_t crc = CRC16_INIT_VAL;
+  crc          = CalcCRC16(&len, sizeof(len), crc);
+  crc          = CalcCRC16(&cmd, sizeof(cmd), crc);
+  crc          = CalcCRC16(data, len, crc);
   return crc;
 }

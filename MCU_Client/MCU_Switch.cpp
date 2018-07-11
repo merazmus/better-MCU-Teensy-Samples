@@ -28,6 +28,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Config.h"
 #include "LCD.h"
 #include "Mesh.h"
+#include "UART.h"
 #include "Encoder.h"
 #include <limits.h>
 #include <stdint.h>
@@ -49,10 +50,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
  * Light Lightness Client configuration
  */
-#define LIGHTNESS_MIN               0            /**< Defines lower range of light lightness. */
+#define LIGHTNESS_MIN               0u           /**< Defines lower range of light lightness. */
 #define LIGHTNESS_MAX               UINT16_MAX   /**< Defines upper range of light lightness. */
-#define LIGHTNESS_MIN_CHANGE        0x500        /**< Defines the lowest reported changed. */
-#define LIGHTNESS_INTVL_MS          100          /**< Defines the shortest interval beetwen two LightLightness messages. */
+#define LIGHTNESS_MIN_CHANGE        0x500u       /**< Defines the lowest reported changed. */
+#define LIGHTNESS_INTVL_MS          100u         /**< Defines the shortest interval beetwen two LightLightness messages. */
 
 /**
  * On Off communication properties
@@ -196,16 +197,16 @@ static bool HasLightnessChanged(int lightness_actual)
 
 static uint16_t LightnessGet(void)
 {
-  const float coefficient        = (float)(LIGHTNESS_MAX-LIGHTNESS_MIN) / (float)(ANALOG_MAX-ANALOG_MIN);
-  uint16_t    analog_measurement = analogRead(PIN_ANALOG);
+  const uint32_t coefficient        = ((LIGHTNESS_MAX-LIGHTNESS_MIN) * UINT16_MAX) / (ANALOG_MAX-ANALOG_MIN);
+  uint16_t       analog_measurement = analogRead(PIN_ANALOG);
 
-  return coefficient * (analog_measurement - ANALOG_MIN) + LIGHTNESS_MIN;
+  return (coefficient * (analog_measurement - ANALOG_MIN)) / UINT16_MAX + LIGHTNESS_MIN;
 }
 
 static void PrintLightness(unsigned lightness_actual)
 {
   unsigned percentage = (lightness_actual * 100.0) / LIGHTNESS_MAX;
-  DEBUG_INTERFACE.printf("Current Lightness is %d (%d%)\n", lightness_actual, percentage);
+  INFO("Current Lightness is %d (%d%)\n", lightness_actual, percentage);
 }
 
 /********************************************
@@ -234,7 +235,7 @@ uint8_t GetInstanceIdxSwitch2(void)
 
 void SetupSwitch(void)
 {
-  DEBUG_INTERFACE.println("Switch initialization.\n");
+  INFO("Switch initialization.\n");
   pinMode(PB_ON_1,       INPUT_PULLUP);
   pinMode(PB_OFF_1,      INPUT_PULLUP);
   pinMode(PB_ON_2,       INPUT_PULLUP);
@@ -251,7 +252,7 @@ void LoopSwitch(void)
   if (On1)
   {
     On1 = false;
-    DEBUG_INTERFACE.println("Generic ON 1\n");
+    INFO("Generic ON 1\n");
     Mesh_SendGenericOnOffSet(LightLcClient1InstanceIdx, 
                              GENERIC_ON, 
                              ON_OFF_TRANSITION_TIME_MS,
@@ -261,7 +262,7 @@ void LoopSwitch(void)
   if (Off1)
   {
     Off1 = false;
-    DEBUG_INTERFACE.println("Generic OFF 1\n");
+    INFO("Generic OFF 1\n");
     Mesh_SendGenericOnOffSet(LightLcClient1InstanceIdx, 
                              GENERIC_OFF,
                              ON_OFF_TRANSITION_TIME_MS,
@@ -271,7 +272,7 @@ void LoopSwitch(void)
   if (On2)
   {
     On2 = false;
-    DEBUG_INTERFACE.println("Generic ON 2\n");
+    INFO("Generic ON 2\n");
     Mesh_SendGenericOnOffSet(LightLcClient2InstanceIdx, 
                              GENERIC_ON, 
                              ON_OFF_TRANSITION_TIME_MS,
@@ -281,7 +282,7 @@ void LoopSwitch(void)
   if (Off2)
   {
     Off2 = false;
-    DEBUG_INTERFACE.println("Generic OFF 2\n");
+    INFO("Generic OFF 2\n");
     Mesh_SendGenericOnOffSet(LightLcClient2InstanceIdx, 
                              GENERIC_OFF,
                              ON_OFF_TRANSITION_TIME_MS,
@@ -312,9 +313,9 @@ void LoopSwitch(void)
                                DEFAULT_DELAY_TIME_MS);
 
       if (is_new_tid)
-        DEBUG_INTERFACE.printf("Delta Continue %d \n\n", delta);
+        INFO("Delta Continue %d \n\n", delta);
       else
-        DEBUG_INTERFACE.printf("Delta Start %d \n\n", delta);
+        INFO("Delta Start %d \n\n", delta);
 
       DeltaEncoder.write(0);
       last_delta_message_time = millis();

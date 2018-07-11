@@ -172,7 +172,7 @@ bool IsTestInProgress(void)
 
 void SetupHealth(void)
 {
-  DEBUG_INTERFACE.println("Health initialization.\n");
+  INFO("Health initialization.\n");
   pinMode(PIN_LED_1,     OUTPUT);
   pinMode(PIN_LED_2,     OUTPUT);
   pinMode(PB_FAULT,      INPUT_PULLUP);
@@ -190,7 +190,7 @@ void LoopHealth(void)
   if (Fault)
   {
     Fault = false;
-    DEBUG_INTERFACE.println("Fault button");
+    INFO("Fault button\n");
     FaultState = !FaultState;
     digitalWrite(PIN_LED_1, FaultState);
     
@@ -207,7 +207,7 @@ void LoopHealth(void)
   if (Connection)
   {
     Connection = false;
-    DEBUG_INTERFACE.println("Connection button");
+    INFO("Connection button\n");
     ConnectionState = !ConnectionState;
     digitalWrite(PIN_LED_2, ConnectionState);
     
