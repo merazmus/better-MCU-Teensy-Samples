@@ -32,6 +32,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * LOCAL #define CONSTANTS AND MACROS       *
  ********************************************/
 
+#define ENABLE_CTL                  0   /**< Enable CTL support */
+#define MODULE_1_10_V               1   /**< Define for calculate lightness for 0-10 V (value 0) or 1-10 V (value 1) */
+
 #define BUILD_NUMBER                "0000"                   /**< Defines firmware build number. */
 #define FIRMWARE_VERSION            "S" BUILD_NUMBER         /**< Defines firmware version. */
 #define DFU_VALIDATION_STRING       "server"                 /**< Defines string to be expected in app data */
@@ -52,7 +55,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PIN_LED_1                   11  /**< Defines led 1 pin. */
 #define PIN_LED_2                   12  /**< Defines led 2 pin. */
 #define PIN_LED_STATUS              13  /**< Defines status led pin. */
-#define PIN_PWM                     16  /**< Defines pwm pin. */
+#define PIN_PWM_WARM                23  /**< Defines pwm pin. */
+#define PIN_PWM_COLD                16  /**< Defines pwm pin. */
 #define PIN_SW_1                    22  /**< Defines switch 1 pin. */
 #define PIN_SW_2                    21  /**< Defines switch 2 pin. */
 #define PIN_SW_3                    20  /**< Defines switch 3 pin. */

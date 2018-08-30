@@ -60,6 +60,12 @@ static ModemState_t ModemState = MODEM_STATE_UNKNOWN;
 static bool         AttentionState;
 static bool         AttentionLedValue;
 
+#if ENABLE_CTL==0
+static const bool CTLEnabled = false;
+#else
+static const bool CTLEnabled = true;
+#endif
+
 /********************************************
  * LOCAL FUNCTIONS PROTOTYPES               *
  ********************************************/
@@ -193,61 +199,113 @@ void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
   ModemState     = MODEM_STATE_INIT_DEVICE;
   AttentionState = false;
 
-  if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_LC_SERVER))
-  {
-    INFO("Modem does not support Light Lightness Controller Server.\n");
-    return;
-  }
-
   if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_SENSOR_SERVER))
   {
     INFO("Modem does not support Sensor Server.\n");
     return;
   }
 
-  uint8_t model_ids[] = {
-    // Light Lightness Controller server
-    lowByte(MESH_MODEL_ID_LIGHT_LC_SERVER),
-    highByte(MESH_MODEL_ID_LIGHT_LC_SERVER),
+  if (Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_CTL_SERVER) && CTLEnabled)
+  {
+    uint8_t model_ids[] = {
+      // Light CTL server
+      lowByte(MESH_MODEL_ID_LIGHT_CTL_SERVER),
+      highByte(MESH_MODEL_ID_LIGHT_CTL_SERVER),
+      lowByte(0),
+      highByte(0),
+      lowByte(0),
+      highByte(0),
 
-    // PIR Sensor Server
-    lowByte(MESH_MODEL_ID_SENSOR_SERVER),
-    highByte(MESH_MODEL_ID_SENSOR_SERVER),
-    0x01,
-    lowByte(MESH_PROPERTY_ID_PRESENCE_DETECTED),
-    highByte(MESH_PROPERTY_ID_PRESENCE_DETECTED),
-    lowByte(PIR_POSITIVE_TOLERANCE),
-    highByte(PIR_POSITIVE_TOLERANCE),
-    lowByte(PIR_NEGATIVE_TOLERANCE),
-    highByte(PIR_NEGATIVE_TOLERANCE),
-    PIR_SAMPLING_FUNCTION,
-    PIR_MEASUREMENT_PERIOD,
-    PIR_UPDATE_INTERVAL,
+      // PIR Sensor Server
+      lowByte(MESH_MODEL_ID_SENSOR_SERVER),
+      highByte(MESH_MODEL_ID_SENSOR_SERVER),
+      0x01,
+      lowByte(MESH_PROPERTY_ID_PRESENCE_DETECTED),
+      highByte(MESH_PROPERTY_ID_PRESENCE_DETECTED),
+      lowByte(PIR_POSITIVE_TOLERANCE),
+      highByte(PIR_POSITIVE_TOLERANCE),
+      lowByte(PIR_NEGATIVE_TOLERANCE),
+      highByte(PIR_NEGATIVE_TOLERANCE),
+      PIR_SAMPLING_FUNCTION,
+      PIR_MEASUREMENT_PERIOD,
+      PIR_UPDATE_INTERVAL,
 
-    // ALS Sensor Server
-    lowByte(MESH_MODEL_ID_SENSOR_SERVER),
-    highByte(MESH_MODEL_ID_SENSOR_SERVER),
-    0x01,
-    lowByte(MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL),
-    highByte(MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL),
-    lowByte(ALS_POSITIVE_TOLERANCE),
-    highByte(ALS_POSITIVE_TOLERANCE),
-    lowByte(ALS_NEGATIVE_TOLERANCE),
-    highByte(ALS_NEGATIVE_TOLERANCE),
-    ALS_SAMPLING_FUNCTION,
-    ALS_MEASUREMENT_PERIOD,
-    ALS_UPDATE_INTERVAL,
+      // ALS Sensor Server
+      lowByte(MESH_MODEL_ID_SENSOR_SERVER),
+      highByte(MESH_MODEL_ID_SENSOR_SERVER),
+      0x01,
+      lowByte(MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL),
+      highByte(MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL),
+      lowByte(ALS_POSITIVE_TOLERANCE),
+      highByte(ALS_POSITIVE_TOLERANCE),
+      lowByte(ALS_NEGATIVE_TOLERANCE),
+      highByte(ALS_NEGATIVE_TOLERANCE),
+      ALS_SAMPLING_FUNCTION,
+      ALS_MEASUREMENT_PERIOD,
+      ALS_UPDATE_INTERVAL,
 
-    // Health Server
-    lowByte(MESH_MODEL_ID_HEALTH_SERVER),
-    highByte(MESH_MODEL_ID_HEALTH_SERVER),
-    0x01,
-    lowByte(SILVAIR_ID),
-    highByte(SILVAIR_ID),
-  };
+      // Health Server
+      lowByte(MESH_MODEL_ID_HEALTH_SERVER),
+      highByte(MESH_MODEL_ID_HEALTH_SERVER),
+      0x01,
+      lowByte(SILVAIR_ID),
+      highByte(SILVAIR_ID),
+    };
 
-  SendFirmwareVersionSet();
-  UART_SendCreateInstancesRequest(model_ids, sizeof(model_ids));
+    SendFirmwareVersionSet();
+    UART_SendCreateInstancesRequest(model_ids, sizeof(model_ids));
+  }
+  else if (Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_LC_SERVER))
+  {
+    uint8_t model_ids[] = {
+      // Light CTL server
+      lowByte(MESH_MODEL_ID_LIGHT_LC_SERVER),
+      highByte(MESH_MODEL_ID_LIGHT_LC_SERVER),
+
+      // PIR Sensor Server
+      lowByte(MESH_MODEL_ID_SENSOR_SERVER),
+      highByte(MESH_MODEL_ID_SENSOR_SERVER),
+      0x01,
+      lowByte(MESH_PROPERTY_ID_PRESENCE_DETECTED),
+      highByte(MESH_PROPERTY_ID_PRESENCE_DETECTED),
+      lowByte(PIR_POSITIVE_TOLERANCE),
+      highByte(PIR_POSITIVE_TOLERANCE),
+      lowByte(PIR_NEGATIVE_TOLERANCE),
+      highByte(PIR_NEGATIVE_TOLERANCE),
+      PIR_SAMPLING_FUNCTION,
+      PIR_MEASUREMENT_PERIOD,
+      PIR_UPDATE_INTERVAL,
+
+      // ALS Sensor Server
+      lowByte(MESH_MODEL_ID_SENSOR_SERVER),
+      highByte(MESH_MODEL_ID_SENSOR_SERVER),
+      0x01,
+      lowByte(MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL),
+      highByte(MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL),
+      lowByte(ALS_POSITIVE_TOLERANCE),
+      highByte(ALS_POSITIVE_TOLERANCE),
+      lowByte(ALS_NEGATIVE_TOLERANCE),
+      highByte(ALS_NEGATIVE_TOLERANCE),
+      ALS_SAMPLING_FUNCTION,
+      ALS_MEASUREMENT_PERIOD,
+      ALS_UPDATE_INTERVAL,
+
+      // Health Server
+      lowByte(MESH_MODEL_ID_HEALTH_SERVER),
+      highByte(MESH_MODEL_ID_HEALTH_SERVER),
+      0x01,
+      lowByte(SILVAIR_ID),
+      highByte(SILVAIR_ID),
+    };
+
+    SendFirmwareVersionSet();
+    UART_SendCreateInstancesRequest(model_ids, sizeof(model_ids));
+  }
+  else
+  {
+    INFO("Modem does support neither Light CTL Server nor Light LC Server.\n");
+    return;
+  }
 }
 
 void ProcessEnterDevice(uint8_t * p_payload, uint8_t len)
@@ -255,7 +313,7 @@ void ProcessEnterDevice(uint8_t * p_payload, uint8_t len)
   INFO("Device State.\n");
 
   // Setting Lightness value in Device state to 50 % of maximum lightness
-  ProcessTargetLightness(0xFFFF/2, 0); 
+  ProcessTargetLightness(0xFFFF/2, 0xFFFF/2, 0); 
 
   ModemState = MODEM_STATE_DEVICE;
 }
@@ -277,10 +335,11 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
     uint16_t model_id = ((uint16_t)p_payload[index++]);
     model_id         |= ((uint16_t)p_payload[index++] << 8);
 
-    if (MESH_MODEL_ID_LIGHT_LC_SERVER == model_id)
+    if (MESH_MODEL_ID_LIGHT_CTL_SERVER == model_id || MESH_MODEL_ID_LIGHT_LC_SERVER == model_id)
     {
       uint16_t current_model_id_instance_index = index/2;
       SetLightnessServerIdx(current_model_id_instance_index);
+      SetLightCTLSupport(model_id == MESH_MODEL_ID_LIGHT_CTL_SERVER);
     }
 
     if (model_id == MESH_MODEL_ID_SENSOR_SERVER)
@@ -308,7 +367,7 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
   if (GetLightnessServerIdx() == INSTANCE_INDEX_UNKNOWN)
   {
     ModemState = MODEM_STATE_UNKNOWN;
-    INFO("Light Lightness Server model id not found in init node message\n");
+    INFO("Light CTL Server model id not found in init node message\n");
     return;
   }
 

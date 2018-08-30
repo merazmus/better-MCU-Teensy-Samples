@@ -495,8 +495,14 @@ static bool ExtractFrameFromBuffer(RxFrame_t * rx_frame)
   }
   else if (count == LEN_OFFSET)
   {
-    rx_frame->len = received_byte;
-    count++;
+    if (received_byte <= MAX_PAYLOAD_SIZE)
+    {
+      rx_frame->len = received_byte;
+      count++;
+    }
+    else {
+      count = 0;
+    }
   }
   else if (count == CMD_OFFSET)
   {

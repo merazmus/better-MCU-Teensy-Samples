@@ -32,22 +32,32 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * EXPORTED #define CONSTANTS AND MACROS    *
  ********************************************/
 
-#define LIGHTNESS_MIN  0            /**< Defines lower range of light lightness */
-#define LIGHTNESS_MAX  UINT16_MAX   /**< Defines upper range of light lightness */
+#define LIGHTNESS_MIN          0            /**< Defines lower range of light lightness */
+#define LIGHTNESS_MAX          UINT16_MAX   /**< Defines upper range of light lightness */
+#define LIGHTNESS_TEMP_MIN     0x0320       /**< Defines lower range of light temperature */
+#define LIGHTNESS_TEMP_MAX     0x4E20       /**< Defines upper range of light temperature */
+#define LIGHTNESS_TEMP_UNKNOWN 0xFFFF       /**< Defines unknown  light temperature value */
 
 /********************************************
  * FUNCTION PROTOTYPES                      *
  ********************************************/
 
 /*
- *  Set Lightness LC Server instance index
+ *  Set Lightness Server instance index
  *
  *  @param idx  Lightness value
  */
 void SetLightnessServerIdx(uint8_t idx);
 
 /*
- *  Get Lightness LC Server instance index
+ *  Set Lightness CTL support
+ *
+ *  @param support  True to enable, false to disable
+ */
+void SetLightCTLSupport(bool support);
+
+/*
+ *  Get Lightness Server instance index
  *
  *  @return     Lightness value
  */
@@ -56,10 +66,20 @@ uint8_t GetLightnessServerIdx(void);
 /*
  *  Process new target lightness
  *
- *  @param val                 Lightness value
+ *  @param current             Current lightness value
+ *  @param target              Target lightness value
  *  @param transition_time     Transition time
  */
-void ProcessTargetLightness(uint16_t val, uint32_t transition_time);
+void ProcessTargetLightness(uint16_t current, uint16_t target, uint32_t transition_time);
+
+/*
+ *  Process new target lightness temperature
+ *
+ *  @param current             Current lightness temperature value
+ *  @param target              Target lightness temperature value
+ *  @param transition_time     Transition time
+ */
+void ProcessTargetLightnessTemp(uint16_t current, uint16_t target, uint32_t transition_time);
 
 /*
  *  Setup light lightness server hardware

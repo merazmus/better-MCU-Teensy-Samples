@@ -37,6 +37,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * Supported Mesh Model IDs definitions
  */
 #define MESH_MODEL_ID_LIGHT_LC_SERVER                 0x130F
+#define MESH_MODEL_ID_LIGHT_CTL_SERVER                0x1303
 #define MESH_MODEL_ID_SENSOR_SERVER                   0x1100
 #define MESH_MODEL_ID_SENSOR_SETUP_SERVER             0x1101
 #define MESH_MODEL_ID_HEALTH_SERVER                   0x0002
@@ -79,9 +80,19 @@ void Mesh_SendLightLightnessGet(uint8_t instance_idx);
 /*
  *  Process new target lightness
  *
- *  @param val                 Lightness value
+ *  @param current             Current lightness value
+ *  @param target              Target lightness value
  *  @param transition_time     Transition time
  */
-extern void ProcessTargetLightness(uint16_t val, uint32_t transition_time);
+extern void ProcessTargetLightness(uint16_t current, uint16_t target, uint32_t transition_time);
+
+/*
+ *  Process new target lightness temperature
+ *
+ *  @param current             Current lightness temperature value
+ *  @param target              Target lightness temperature value
+ *  @param transition_time     Transition time
+ */
+extern void ProcessTargetLightnessTemp(uint16_t current, uint16_t target, uint32_t transition_time);
 
 #endif  // MESH_H_
