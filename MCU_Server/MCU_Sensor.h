@@ -32,19 +32,253 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * LOCAL #define CONSTANTS AND MACROS       *
  ********************************************/
 
+#define MESH_TOLERANCE(_error)  ((uint16_t) ((4095 * _error) / 100))
+
 /*
- *  Sensor properties
+ * Sensor Positive Tolerance: 0 percent
  */
-#define PIR_POSITIVE_TOLERANCE      0x0000
-#define PIR_NEGATIVE_TOLERANCE      0x0000
-#define PIR_SAMPLING_FUNCTION       0x01
-#define PIR_MEASUREMENT_PERIOD      0x40
-#define PIR_UPDATE_INTERVAL         0x40
-#define ALS_POSITIVE_TOLERANCE      0x0000
-#define ALS_NEGATIVE_TOLERANCE      0x0000
-#define ALS_SAMPLING_FUNCTION       0x01
-#define ALS_MEASUREMENT_PERIOD      0x40
-#define ALS_UPDATE_INTERVAL         0x40
+#define PIR_POSITIVE_TOLERANCE             MESH_TOLERANCE(0)
+/*
+ * Sensor Negative Tolerance: 0 percent
+ */
+#define PIR_NEGATIVE_TOLERANCE             MESH_TOLERANCE(0)
+/*
+ * Sensor Sampling Function: Instantaneous
+ *
+ * Sensor Sampling Functions:
+ * 0x00 - Unspecified
+ * 0x01 - Instantaneous
+ * 0x02 - Arithmetic Mean
+ * 0x03 - RMS
+ * 0x04 - Maximum
+ * 0x05 - Minimum
+ * 0x06 - Accumulated
+ * 0x07 - Count
+ * 0x08 - 0xFF - RFU
+ */
+#define PIR_SAMPLING_FUNCTION              0x01
+/*
+ * Sensor Measurement Period: Not Applicable
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define PIR_MEASUREMENT_PERIOD             0x00
+/*
+ * Sensor Update Interval: 1 second
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define PIR_UPDATE_INTERVAL                0x40
+
+/*
+ * Sensor Positive Tolerance: 0 percent
+ */
+#define ALS_POSITIVE_TOLERANCE             MESH_TOLERANCE(0)
+/*
+ * Sensor Negative Tolerance: 0 percent
+ */
+#define ALS_NEGATIVE_TOLERANCE             MESH_TOLERANCE(0)
+/*
+ * Sensor Sampling Function: Instantaneous
+ *
+ * Sensor Sampling Functions:
+ * 0x00 - Unspecified
+ * 0x01 - Instantaneous
+ * 0x02 - Arithmetic Mean
+ * 0x03 - RMS
+ * 0x04 - Maximum
+ * 0x05 - Minimum
+ * 0x06 - Accumulated
+ * 0x07 - Count
+ * 0x08 - 0xFF - RFU
+ */
+#define ALS_SAMPLING_FUNCTION              0x01
+/*
+ * Sensor Measurement Period: Not Applicable
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define ALS_MEASUREMENT_PERIOD             0x00
+/*
+ * Sensor Update Interval: 1 second
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define ALS_UPDATE_INTERVAL                0x40
+
+/*
+ * Sensor Positive Tolerance: 0.5 percent
+ */
+#define VOLTAGE_SENSOR_POSITIVE_TOLERANCE  MESH_TOLERANCE(0.5)
+/*
+ * Sensor Negative Tolerance: 0.5 percent
+ */
+#define VOLTAGE_SENSOR_NEGATIVE_TOLERANCE  MESH_TOLERANCE(0.5)
+/*
+ * Sensor Sampling Function: RMS
+ *
+ * Sensor Sampling Functions:
+ * 0x00 - Unspecified
+ * 0x01 - Instantaneous
+ * 0x02 - Arithmetic Mean
+ * 0x03 - RMS
+ * 0x04 - Maximum
+ * 0x05 - Minimum
+ * 0x06 - Accumulated
+ * 0x07 - Count
+ * 0x08 - 0xFF - RFU
+ */
+#define VOLTAGE_SENSOR_SAMPLING_FUNCTION   0x03
+/*
+ * Sensor Measurement Period: Not Applicable
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define VOLTAGE_SENSOR_MEASUREMENT_PERIOD  0x00
+/*
+ * Sensor Update Interval: 1 second
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define VOLTAGE_SENSOR_UPDATE_INTERVAL     0x40
+
+/*
+ * Sensor Positive Tolerance: 0.5 percent
+ */
+#define CURRENT_SENSOR_POSITIVE_TOLERANCE  MESH_TOLERANCE(0.5)
+/*
+ * Sensor Negative Tolerance: 0.5 percent
+ */
+#define CURRENT_SENSOR_NEGATIVE_TOLERANCE  MESH_TOLERANCE(0.5)
+/*
+ * Sensor Sampling Function: RMS
+ *
+ * Sensor Sampling Functions:
+ * 0x00 - Unspecified
+ * 0x01 - Instantaneous
+ * 0x02 - Arithmetic Mean
+ * 0x03 - RMS
+ * 0x04 - Maximum
+ * 0x05 - Minimum
+ * 0x06 - Accumulated
+ * 0x07 - Count
+ * 0x08 - 0xFF - RFU
+ */
+#define CURRENT_SENSOR_SAMPLING_FUNCTION   0x03
+/*
+ * Sensor Measurement Period: Not Applicable
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define CURRENT_SENSOR_MEASUREMENT_PERIOD  0x00
+/*
+ * Sensor Update Interval: 1 second
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define CURRENT_SENSOR_UPDATE_INTERVAL     0x40
+
+/*
+ * Sensor Positive Tolerance: 1 percent
+ */
+#define POWER_SENSOR_POSITIVE_TOLERANCE    MESH_TOLERANCE(1)
+/*
+ * Sensor Negative Tolerance: 1 percent
+ */
+#define POWER_SENSOR_NEGATIVE_TOLERANCE    MESH_TOLERANCE(1)
+/*
+ * Sensor Sampling Function: RMS
+ *
+ * Sensor Sampling Functions:
+ * 0x00 - Unspecified
+ * 0x01 - Instantaneous
+ * 0x02 - Arithmetic Mean
+ * 0x03 - RMS
+ * 0x04 - Maximum
+ * 0x05 - Minimum
+ * 0x06 - Accumulated
+ * 0x07 - Count
+ * 0x08 - 0xFF - RFU
+ */
+#define POWER_SENSOR_SAMPLING_FUNCTION     0x03
+/*
+ * Sensor Measurement Period: Not Applicable
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define POWER_SENSOR_MEASUREMENT_PERIOD    0x00
+/*
+ * Sensor Update Interval: 1 second
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define POWER_SENSOR_UPDATE_INTERVAL       0x40
+
+/*
+ * Sensor Positive Tolerance: 1 percent
+ */
+#define ENERGY_SENSOR_POSITIVE_TOLERANCE   MESH_TOLERANCE(1)
+/*
+ * Sensor Negative Tolerance: 1 percent
+ */
+#define ENERGY_SENSOR_NEGATIVE_TOLERANCE   MESH_TOLERANCE(1)
+/*
+ * Sensor Sampling Function: RMS
+ *
+ * Sensor Sampling Functions:
+ * 0x00 - Unspecified
+ * 0x01 - Instantaneous
+ * 0x02 - Arithmetic Mean
+ * 0x03 - RMS
+ * 0x04 - Maximum
+ * 0x05 - Minimum
+ * 0x06 - Accumulated
+ * 0x07 - Count
+ * 0x08 - 0xFF - RFU
+ */
+#define ENERGY_SENSOR_SAMPLING_FUNCTION    0x03
+/*
+ * Sensor Measurement Period: Not Applicable
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define ENERGY_SENSOR_MEASUREMENT_PERIOD   0x00
+/*
+ * Sensor Update Interval: 1 second
+ *
+ * Calculated using formula: value = 1.1^(n-64) [s]
+ *
+ * Value of 0x00 means 'Not Applicable'
+ */
+#define ENERGY_SENSOR_UPDATE_INTERVAL      0x40
+
+#define MESH_PROPERTY_PRESENT_AMBIENT_LIGHT_LEVEL_UNKNOWN_VAL    0xFFFFFF
+#define MESH_PROPERTY_PRESENT_DEVICE_INPUT_POWER_UNKNOWN_VAL     0xFFFFFF
+#define MESH_PROPERTY_PRESENT_INPUT_CURRENT_UNKNOWN_VAL          0xFFFF
+#define MESH_PROPERTY_PRESENT_INPUT_VOLTAGE_UNKNOWN_VAL          0xFFFF
+#define MESH_PROPERTY_TOTAL_DEVICE_ENERGY_USE_UNKNOWN_VAL        0xFFFFFF
 
 /********************************************
  * FUNCTION PROTOTYPES                      *
@@ -52,8 +286,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /*
  *  Sensor Server ALS instance index setter
- *
- *  @param idx  Instance index
  */
 void SetSensorServerALSIdx(uint8_t idx);
 
@@ -66,8 +298,6 @@ uint8_t GetSensorServerALSIdx(void);
 
 /*
  *  Sensor Server PIR instance index setter
- *
- *  @param idx  Instance index
  */
 void SetSensorServerPIRIdx(uint8_t idx);
 
@@ -77,6 +307,30 @@ void SetSensorServerPIRIdx(uint8_t idx);
  *  @return  Instance index
  */
 uint8_t GetSensorServerPIRIdx(void);
+
+/*
+ *  Sensor Server Voltage Current instance index setter
+ */
+void SetSensorServerVoltCurrIdx(uint8_t idx);
+
+/*
+ *  Sensor Server Voltage Current instance index getter
+ *
+ *  @return  Instance index
+ */
+uint8_t GetSensorServerVoltCurrIdx(void);
+
+/*
+ *  Sensor Server Power Energy instance index setter
+ */
+void SetSensorServerPowEnergyIdx(uint8_t idx);
+
+/*
+ *  Sensor Server Power Energy instance index getter
+ *
+ *  @return  Instance index
+ */
+uint8_t GetSensorServerPowEnergyIdx(void);
 
 /*
  *  Setup sensor server hardware

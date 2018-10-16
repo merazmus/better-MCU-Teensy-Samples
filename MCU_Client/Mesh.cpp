@@ -58,7 +58,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
  * Default communication properties
  */
-#define MESH_REPEATS_INTERVAL_MS                            50
+#define MESH_REPEATS_INTERVAL_MS                            20
+#define MESH_MESSAGES_QUEUE_LENGTH                          10
 
 /**
  * Used Mesh Messages len
@@ -66,7 +67,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define MESH_MESSAGE_GENERIC_ONOFF_SET_LEN                  8
 #define MESH_MESSAGE_LIGHT_LIGHTNESS_SET_LEN                9
 #define MESH_MESSAGE_GENERIC_DELTA_SET_LEN                  11
-#define MESH_MESSAGE_LIGHT_LC_MODE_SET_LEN                  5
 
 /*
  * Mesh time conversion definitions
@@ -84,7 +84,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define MESH_TRANSITION_TIME_NUMBER_OF_STEPS_UNKNOWN_VALUE  0x3F
 #define MESH_DELAY_TIME_STEP_MS                             5
 
-/**
+/*
  * Sensor status description
  */
 #define SS_FORMAT_MASK                                      0x01
@@ -96,11 +96,50 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define SS_LONG_LEN_MASK                                    0xFE
 #define SS_LONG_LEN_OFFSET                                  1
 
-/**
- * Property IDs description
- */
-#define PRESENCE_DETECTED_PROPERTY_ID                       0x004D
-#define PRESENT_AMBIENT_LIGHT_LEVEL                         0x004E
+/********************************************
+ * STATIC VARIABLES                         *
+ ********************************************/
+
+typedef enum
+{
+  GENERIC_ON_OFF_SET_MSG,
+  GENERIC_DELTA_SET_MSG,
+  LIGHT_LIGHTNESS_SET_MSG,
+} MsgType_T;
+
+typedef struct
+{
+  uint8_t onoff;
+  uint8_t tid;
+  uint8_t transition_time;
+  uint8_t delay;
+} GenericOnOffSetMsg_T;
+
+typedef struct
+{
+  uint32_t delta_level;
+  uint8_t  tid;
+  uint8_t  transition_time;
+  uint8_t  delay;
+} GenericDeltaSetMsg_T;
+
+typedef struct
+{
+  uint16_t lightness;
+  uint8_t  tid;
+  uint8_t  transition_time;
+  uint8_t  delay;
+} LightLightnessSetMsg_T;
+
+typedef struct
+{
+  MsgType_T     msg_type;
+  uint8_t       instance_idx;
+  void *        mesh_msg;
+  unsigned long dispatch_time;
+} EnqueuedMsg_T;
+
+EnqueuedMsg_T * MeshMsgsQueue[MESH_MESSAGES_QUEUE_LENGTH];
 
 /********************************************
  * LOCAL FUNCTIONS PROTOTYPES               *
@@ -115,11 +154,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *  @param delay_ms          Delay in miliseconds
  *  @param is_new            Is it a new transation?
  */
-static void MeshInternal_SendGenericOnOffSet(uint8_t instance_idx,
-                                             bool    value,
-                                             uint8_t transition_time,
-                                             uint8_t delay_ms,
-                                             bool    is_new);
+static void MeshInternal_SendGenericOnOffSet(uint8_t                instance_idx,
+                                             GenericOnOffSetMsg_T * message);
 
 /*
  *  Send Light Lightness Set message
@@ -130,11 +166,8 @@ static void MeshInternal_SendGenericOnOffSet(uint8_t instance_idx,
  *  @param delay_ms          Delay in miliseconds
  *  @param is_new            Is it a new transation?
  */
-static void MeshInternal_SendLightLightnessSet(uint8_t  instance_idx,
-                                               uint16_t value,
-                                               uint8_t  transition_time,
-                                               uint8_t  delay_ms,
-                                               bool     is_new);
+static void MeshInternal_SendLightLightnessSet(uint8_t                  instance_idx,
+                                               LightLightnessSetMsg_T * message);
 
 /*
  *  Send Generic Delta Set message
@@ -145,22 +178,8 @@ static void MeshInternal_SendLightLightnessSet(uint8_t  instance_idx,
  *  @param delay_ms          Delay in miliseconds
  *  @param is_new            Is it a new transation?
  */
-static void MeshInternal_SendGenericDeltaSet(uint8_t instance_idx,
-                                             int32_t value,
-                                             uint8_t transition_time,
-                                             uint8_t delay_ms,
-                                             bool    is_new);
-
-/*
- *  Send Light Lightness Controller Mode Set message
- *
- *  @param instance_idx      Instance index
- *  @param value             Generic OnOff value
- *  @param transition_time   Transition time (mesh format)
- *  @param delay_ms          Delay in miliseconds
- *  @param is_new            Is it a new transation?
- */
-static void MeshInternal_SendLightLightnessControllerModeSet(uint8_t instance_idx, bool value);
+static void MeshInternal_SendGenericDeltaSet(uint8_t                instance_idx,
+                                             GenericDeltaSetMsg_T * message);
 
 /*
  *  Convert time from miliseconds to mesh format
@@ -168,7 +187,7 @@ static void MeshInternal_SendLightLightnessControllerModeSet(uint8_t instance_id
  *  @param time_ms   Time in miliseconds
  *  @return          Time in mesh format
  */
-static uint8_t MeshInternal_ConvertFromMsToMeshFormatTransitionTime(uint32_t time_ms);
+static uint8_t MeshInternal_ConvertFromMsToMeshFormat(uint32_t time_ms);
 
 /*
  *  Process Sensor Status message
@@ -198,7 +217,9 @@ static void MeshInternal_ProcessSensorProperty(uint16_t  property_id,
  *  @param len            Payload length
  *  @param src_addr       Source address
  */
-static void MeshInternal_ProcessPresenceDetected(uint8_t * p_payload, size_t len, uint16_t src_addr);
+static void MeshInternal_ProcessPresenceDetected(uint8_t * p_payload,
+                                                 size_t    len,
+                                                 uint16_t  src_addr);
 
 /*
  *  Process ALS update
@@ -210,6 +231,50 @@ static void MeshInternal_ProcessPresenceDetected(uint8_t * p_payload, size_t len
 static void MeshInternal_ProcessPresentAmbientLightLevel(uint8_t * p_payload,
                                                          size_t    len,
                                                          uint16_t  src_addr);
+
+/*
+ *  Process Power Sensor update
+ *
+ *  @param * p_payload    Pointer to message p_payload
+ *  @param len            Payload length
+ *  @param src_addr       Source address
+ */
+static void MeshInternal_ProcessDeviceInputPower(uint8_t * p_payload,
+                                                 size_t    len,
+                                                 uint16_t  src_addr);
+
+/*
+ *  Process Current Sensor update
+ *
+ *  @param * p_payload    Pointer to message p_payload
+ *  @param len            Payload length
+ *  @param src_addr       Source address
+ */
+static void MeshInternal_ProcessPresentInputCurrent(uint8_t * p_payload,
+                                                    size_t    len,
+                                                    uint16_t  src_addr);
+
+/*
+ *  Process Voltage Sensor update
+ *
+ *  @param * p_payload    Pointer to message p_payload
+ *  @param len            Payload length
+ *  @param src_addr       Source address
+ */
+static void MeshInternal_ProcessPresentInputVoltage(uint8_t * p_payload,
+                                                    size_t    len,
+                                                    uint16_t  src_addr);
+
+/*
+ *  Process Energy Sensor update
+ *
+ *  @param * p_payload    Pointer to message p_payload
+ *  @param len            Payload length
+ *  @param src_addr       Source address
+ */
+static void MeshInternal_ProcessTotalDeviceEnergyUse(uint8_t * p_payload,
+                                                     size_t    len,
+                                                     uint16_t  src_addr);
 
 /********************************************
  * COMMON EXPORTED FUNCTION DEFINITIONS     *
@@ -252,6 +317,46 @@ void Mesh_ProcessMeshCommand(uint8_t * p_payload, size_t len)
   }
 }
 
+void Mesh_Loop(void)
+{
+  for (int i = 0; i < MESH_MESSAGES_QUEUE_LENGTH; i++)
+  {
+    if (MeshMsgsQueue[i] == NULL)                   continue;
+    if (MeshMsgsQueue[i]->dispatch_time > millis()) continue;
+
+    switch (MeshMsgsQueue[i]->msg_type)
+    {
+      case GENERIC_ON_OFF_SET_MSG:
+      {
+        MeshInternal_SendGenericOnOffSet(MeshMsgsQueue[i]->instance_idx,
+                                         (GenericOnOffSetMsg_T *) MeshMsgsQueue[i]->mesh_msg);
+        free(MeshMsgsQueue[i]->mesh_msg);
+        free(MeshMsgsQueue[i]);
+        MeshMsgsQueue[i] = NULL;
+        break;
+      }
+      case GENERIC_DELTA_SET_MSG:
+      {
+        MeshInternal_SendGenericDeltaSet(MeshMsgsQueue[i]->instance_idx,
+                                         (GenericDeltaSetMsg_T *) MeshMsgsQueue[i]->mesh_msg);
+        free(MeshMsgsQueue[i]->mesh_msg);
+        free(MeshMsgsQueue[i]);
+        MeshMsgsQueue[i] = NULL;
+        break;
+      }
+      case LIGHT_LIGHTNESS_SET_MSG:
+      {
+        MeshInternal_SendLightLightnessSet(MeshMsgsQueue[i]->instance_idx,
+                                           (LightLightnessSetMsg_T *) MeshMsgsQueue[i]->mesh_msg);
+        free(MeshMsgsQueue[i]->mesh_msg);
+        free(MeshMsgsQueue[i]);
+        MeshMsgsQueue[i] = NULL;
+        break;
+      }
+    }
+  }
+}
+
 /****************************************************
  * LIGHTNESS SPECIFIC EXPORTED FUNCTION DEFINITIONS *
  ****************************************************/
@@ -259,151 +364,177 @@ void Mesh_ProcessMeshCommand(uint8_t * p_payload, size_t len)
 void Mesh_SendGenericOnOffSet(uint8_t  instance_idx,
                               bool     value,
                               unsigned transition_time,
-                              unsigned delay_ms)
+                              unsigned delay_ms,
+                              uint8_t  num_of_repeats,
+                              bool     is_new_transaction)
 {
-  uint8_t transition_mesh_format =
-    MeshInternal_ConvertFromMsToMeshFormatTransitionTime(transition_time);
-  MeshInternal_SendGenericOnOffSet(instance_idx, value, transition_mesh_format, delay_ms/MESH_DELAY_TIME_STEP_MS, true);
-  while(delay_ms >= MESH_REPEATS_INTERVAL_MS)
+  static uint8_t tid = 0;
+
+  if (is_new_transaction) tid++;
+
+  for (int i = 0; i <= num_of_repeats; i++)
   {
-    delay_ms -= MESH_REPEATS_INTERVAL_MS;
-    MeshInternal_SendGenericOnOffSet(instance_idx, value, transition_mesh_format, delay_ms/MESH_DELAY_TIME_STEP_MS, false);
+    GenericOnOffSetMsg_T * p_msg = (GenericOnOffSetMsg_T *) calloc(1, sizeof(GenericOnOffSetMsg_T));
+    p_msg->onoff                 = value;
+    p_msg->tid                   = tid;
+    p_msg->transition_time       = MeshInternal_ConvertFromMsToMeshFormat(transition_time);
+    p_msg->delay                 = ((num_of_repeats - i) * MESH_REPEATS_INTERVAL_MS + delay_ms)
+                                   / MESH_DELAY_TIME_STEP_MS;
+
+    EnqueuedMsg_T * p_enqueued_msg = (EnqueuedMsg_T *) calloc(1, sizeof(EnqueuedMsg_T));
+    p_enqueued_msg->instance_idx   = instance_idx;
+    p_enqueued_msg->mesh_msg       = p_msg;
+    p_enqueued_msg->dispatch_time  = millis() + i * MESH_REPEATS_INTERVAL_MS;
+    p_enqueued_msg->msg_type       = GENERIC_ON_OFF_SET_MSG;
+
+    for(int i = 0; i < MESH_MESSAGES_QUEUE_LENGTH; i++)
+    {
+      if (MeshMsgsQueue[i] == NULL)
+      {
+        MeshMsgsQueue[i] = p_enqueued_msg;
+        break;
+      }
+    }
   }
 }
 
 void Mesh_SendLightLightnessSet(uint8_t  instance_idx,
                                 uint16_t value,
                                 unsigned transition_time,
-                                unsigned delay_ms)
+                                unsigned delay_ms,
+                                uint8_t  num_of_repeats,
+                                bool     is_new_transaction)
 {
-  uint8_t transition_mesh_format =
-    MeshInternal_ConvertFromMsToMeshFormatTransitionTime(transition_time);
-  MeshInternal_SendLightLightnessSet(instance_idx, value, transition_mesh_format, delay_ms/MESH_DELAY_TIME_STEP_MS, true);
-  while(delay_ms >= MESH_REPEATS_INTERVAL_MS)
+  static uint8_t tid = 0;
+
+  if (is_new_transaction) tid++;
+
+  for (int i = 0; i <= num_of_repeats; i++)
   {
-    delay_ms -= MESH_REPEATS_INTERVAL_MS;
-    MeshInternal_SendLightLightnessSet(instance_idx, value, transition_mesh_format, delay_ms/MESH_DELAY_TIME_STEP_MS, false);
+    LightLightnessSetMsg_T * p_msg = (LightLightnessSetMsg_T *) calloc(1, sizeof(LightLightnessSetMsg_T));
+    p_msg->lightness               = value;
+    p_msg->tid                     = tid;
+    p_msg->transition_time         = MeshInternal_ConvertFromMsToMeshFormat(transition_time);
+    p_msg->delay                   = ((num_of_repeats - i) * MESH_REPEATS_INTERVAL_MS + delay_ms)
+                                     / MESH_DELAY_TIME_STEP_MS;
+
+    EnqueuedMsg_T * p_enqueued_msg = (EnqueuedMsg_T *) calloc(1, sizeof(EnqueuedMsg_T));
+    p_enqueued_msg->instance_idx   = instance_idx;
+    p_enqueued_msg->mesh_msg       = p_msg;
+    p_enqueued_msg->dispatch_time  = millis() + i * MESH_REPEATS_INTERVAL_MS;
+    p_enqueued_msg->msg_type       = LIGHT_LIGHTNESS_SET_MSG;
+
+    for(int i = 0; i < MESH_MESSAGES_QUEUE_LENGTH; i++)
+    {
+      if (MeshMsgsQueue[i] == NULL)
+      {
+        MeshMsgsQueue[i] = p_enqueued_msg;
+        break;
+      }
+    }
   }
 }
 
 void Mesh_SendGenericDeltaSet(uint8_t  instance_idx,
                               int32_t  value,
-                              bool     is_new,
                               unsigned transition_time,
-                              unsigned delay_ms)
+                              unsigned delay_ms,
+                              uint8_t  num_of_repeats,
+                              bool     is_new_transaction)
 {
-  uint8_t transition_mesh_format =
-    MeshInternal_ConvertFromMsToMeshFormatTransitionTime(transition_time);
-  MeshInternal_SendGenericDeltaSet(instance_idx, value, transition_mesh_format, delay_ms/MESH_DELAY_TIME_STEP_MS, is_new);
-  while(delay_ms >= MESH_REPEATS_INTERVAL_MS)
+  static uint8_t tid = 0;
+
+  if (is_new_transaction) tid++;
+
+  for (int i = 0; i <= num_of_repeats; i++)
   {
-    delay_ms -= MESH_REPEATS_INTERVAL_MS;
-    MeshInternal_SendGenericDeltaSet(instance_idx, value, transition_mesh_format, delay_ms/MESH_DELAY_TIME_STEP_MS, false);
+    GenericDeltaSetMsg_T * p_msg = (GenericDeltaSetMsg_T *) calloc(1, sizeof(GenericDeltaSetMsg_T));
+    p_msg->delta_level           = value;
+    p_msg->tid                   = tid;
+    p_msg->transition_time       = MeshInternal_ConvertFromMsToMeshFormat(transition_time);
+    p_msg->delay                 = ((num_of_repeats - i) * MESH_REPEATS_INTERVAL_MS + delay_ms)
+                                   / MESH_DELAY_TIME_STEP_MS;
+
+    EnqueuedMsg_T * p_enqueued_msg = (EnqueuedMsg_T *) calloc(1, sizeof(EnqueuedMsg_T));
+    p_enqueued_msg->instance_idx   = instance_idx;
+    p_enqueued_msg->mesh_msg       = p_msg;
+    p_enqueued_msg->dispatch_time  = millis() + i * MESH_REPEATS_INTERVAL_MS;
+    p_enqueued_msg->msg_type       = GENERIC_DELTA_SET_MSG;
+
+    for(int i = 0; i < MESH_MESSAGES_QUEUE_LENGTH; i++)
+    {
+      if (MeshMsgsQueue[i] == NULL)
+      {
+        MeshMsgsQueue[i] = p_enqueued_msg;
+        break;
+      }
+    }
   }
 }
-
-void Mesh_SendLightLightnessControllerModeSet(uint8_t instance_idx, bool value, unsigned repeats)
-{
-  MeshInternal_SendLightLightnessControllerModeSet(instance_idx, value);
-  for (size_t i = 0; i < repeats; i++)
-  {
-    MeshInternal_SendLightLightnessControllerModeSet(instance_idx, value);
-  }
-}
-
-/*************************************************
- * SENSOR SPECIFIC EXPORTED FUNCTION DEFINITIONS *
- *************************************************/
 
 /*************************************************
  * LIGHTNESS SPECIFIC LOCAL FUNCTION DEFINITIONS *
  *************************************************/
 
-static void MeshInternal_SendGenericOnOffSet(uint8_t instance_idx,
-                                             bool    value,
-                                             uint8_t transition_time,
-                                             uint8_t delay_ms,
-                                             bool    is_new)
+static void MeshInternal_SendGenericOnOffSet(uint8_t                instance_idx,
+                                             GenericOnOffSetMsg_T * message)
 {
   uint8_t        buf[MESH_MESSAGE_GENERIC_ONOFF_SET_LEN];
   size_t         index = 0;
-  static uint8_t tid   = 0;
 
   buf[index++] = instance_idx;
   buf[index++] = 0x00;
   buf[index++] = lowByte(MESH_MESSAGE_GENERIC_ONOFF_SET_UNACKNOWLEDGED);
   buf[index++] = highByte(MESH_MESSAGE_GENERIC_ONOFF_SET_UNACKNOWLEDGED);
-  buf[index++] = (value) ? 0x01 : 0x00;
-  buf[index++] = is_new ? ++tid : tid;
-  buf[index++] = transition_time;
-  buf[index++] = delay_ms;
+  buf[index++] = message->onoff;
+  buf[index++] = message->tid;
+  buf[index++] = message->transition_time;
+  buf[index++] = message->delay;
 
   UART_SendMeshMessageRequest(buf, sizeof(buf));
 }
 
-static void MeshInternal_SendLightLightnessSet(uint8_t  instance_idx,
-                                               uint16_t value,
-                                               uint8_t  transition_time,
-                                               uint8_t  delay_ms,
-                                               bool     is_new)
+static void MeshInternal_SendLightLightnessSet(uint8_t                  instance_idx,
+                                               LightLightnessSetMsg_T * message)
 {
   uint8_t        buf[MESH_MESSAGE_LIGHT_LIGHTNESS_SET_LEN];
   size_t         index = 0;
-  static uint8_t tid   = 0;
 
   buf[index++] = instance_idx;
   buf[index++] = 0x00;
   buf[index++] = lowByte(MESH_MESSAGE_LIGHT_LIGHTNESS_SET_UNACKNOWLEDGED);
   buf[index++] = highByte(MESH_MESSAGE_LIGHT_LIGHTNESS_SET_UNACKNOWLEDGED);
-  buf[index++] = lowByte(value);
-  buf[index++] = highByte(value);
-  buf[index++] = is_new ? ++tid : tid;
-  buf[index++] = transition_time;
-  buf[index++] = delay_ms;
+  buf[index++] = lowByte(message->lightness);
+  buf[index++] = highByte(message->lightness);
+  buf[index++] = message->tid;
+  buf[index++] = message->transition_time;
+  buf[index++] = message->delay;
 
   UART_SendMeshMessageRequest(buf, sizeof(buf));
 }
 
-static void MeshInternal_SendGenericDeltaSet(uint8_t instance_idx,
-                                             int32_t value,
-                                             uint8_t transition_time,
-                                             uint8_t delay_ms,
-                                             bool    is_new)
+static void MeshInternal_SendGenericDeltaSet(uint8_t                instance_idx,
+                                             GenericDeltaSetMsg_T * message)
 {
   uint8_t        buf[MESH_MESSAGE_GENERIC_DELTA_SET_LEN];
   size_t         index = 0;
-  static uint8_t tid   = 0;
 
   buf[index++] = instance_idx;
   buf[index++] = 0x00;
   buf[index++] = lowByte(MESH_MESSAGE_GENERIC_DELTA_SET_UNACKNOWLEDGED);
   buf[index++] = highByte(MESH_MESSAGE_GENERIC_DELTA_SET_UNACKNOWLEDGED);
-  buf[index++] = ((value >> 0) & 0xFF);
-  buf[index++] = ((value >> 8) & 0xFF);
-  buf[index++] = ((value >> 16) & 0xFF);
-  buf[index++] = ((value >> 24) & 0xFF);
-  buf[index++] = is_new ? ++tid : tid;
-  buf[index++] = transition_time;
-  buf[index++] = delay_ms;
+  buf[index++] = ((message->delta_level >> 0) & 0xFF);
+  buf[index++] = ((message->delta_level >> 8) & 0xFF);
+  buf[index++] = ((message->delta_level >> 16) & 0xFF);
+  buf[index++] = ((message->delta_level >> 24) & 0xFF);
+  buf[index++] = message->tid;
+  buf[index++] = message->transition_time;
+  buf[index++] = message->delay;
 
   UART_SendMeshMessageRequest(buf, sizeof(buf));
 }
 
-static void MeshInternal_SendLightLightnessControllerModeSet(uint8_t instance_idx, bool value)
-{
-  uint8_t buf[MESH_MESSAGE_LIGHT_LC_MODE_SET_LEN];
-  size_t  index = 0;
-
-  buf[index++] = instance_idx;
-  buf[index++] = 0x00;
-  buf[index++] = lowByte(MESH_MESSAGE_LIGHT_LC_MODE_SET_UNACKNOWLEDGED);
-  buf[index++] = highByte(MESH_MESSAGE_LIGHT_LC_MODE_SET_UNACKNOWLEDGED);
-  buf[index++] = (value) ? 0x01 : 0x00;
-
-  UART_SendMeshMessageRequest(buf, sizeof(buf));
-}
-
-static uint8_t MeshInternal_ConvertFromMsToMeshFormatTransitionTime(uint32_t time_ms)
+static uint8_t MeshInternal_ConvertFromMsToMeshFormat(uint32_t time_ms)
 {
   if ((time_ms / MESH_NUMBER_OF_MS_IN_100_MS) < MESH_TRANSITION_TIME_NUMBER_OF_STEPS_UNKNOWN_VALUE)
   {
@@ -459,7 +590,8 @@ static void MeshInternal_ProcessSensorStatus(uint8_t * p_payload, size_t len)
     INFO("ProcessSensorStatus index: %d\n", index);
     if (p_payload[index] & SS_FORMAT_MASK)
     {
-      size_t   message_len = (p_payload[index++] & SS_LONG_LEN_MASK) >> SS_LONG_LEN_OFFSET;
+      /* Length field in Sensor Status message is 0-based */
+      size_t   message_len = ((p_payload[index++] & SS_LONG_LEN_MASK) >> SS_LONG_LEN_OFFSET) + 1;
       uint16_t property_id = ((uint16_t)p_payload[index++]);
       property_id         |= ((uint16_t)p_payload[index++] << 8);
 
@@ -468,7 +600,8 @@ static void MeshInternal_ProcessSensorStatus(uint8_t * p_payload, size_t len)
     }
     else
     {
-      size_t   message_len = (p_payload[index] & SS_SHORT_LEN_MASK) >> SS_SHORT_LEN_OFFSET;
+      /* Length field in Sensor Status message is 0-based */
+      size_t   message_len = ((p_payload[index] & SS_SHORT_LEN_MASK) >> SS_SHORT_LEN_OFFSET) + 1;
       uint16_t property_id = (p_payload[index++] & SS_SHORT_PROPERTY_ID_LOW_MASK) >> SS_SHORT_PROPERTY_ID_LOW_OFFSET;
       property_id         |= ((uint16_t) p_payload[index++]) << SS_SHORT_PROPERTY_ID_HIGH_OFFSET;
 
@@ -485,7 +618,7 @@ static void MeshInternal_ProcessSensorProperty(uint16_t  property_id,
 {
   switch (property_id)
   {
-    case PRESENCE_DETECTED_PROPERTY_ID:
+    case PRESENCE_DETECTED:
     {
       MeshInternal_ProcessPresenceDetected(p_payload, len, src_addr);
       break;
@@ -493,6 +626,26 @@ static void MeshInternal_ProcessSensorProperty(uint16_t  property_id,
     case PRESENT_AMBIENT_LIGHT_LEVEL:
     {
       MeshInternal_ProcessPresentAmbientLightLevel(p_payload, len, src_addr);
+      break;
+    }
+    case PRESENT_DEVICE_INPUT_POWER:
+    {
+      MeshInternal_ProcessDeviceInputPower(p_payload, len, src_addr);
+      break;
+    }
+    case PRESENT_INPUT_CURRENT:
+    {
+      MeshInternal_ProcessPresentInputCurrent(p_payload, len, src_addr);
+      break;
+    }
+    case PRESENT_INPUT_VOLTAGE:
+    {
+      MeshInternal_ProcessPresentInputVoltage(p_payload, len, src_addr);
+      break;
+    }
+    case TOTAL_DEVICE_ENERGY_USE:
+    {
+      MeshInternal_ProcessTotalDeviceEnergyUse(p_payload, len, src_addr);
       break;
     }
     default:
@@ -504,28 +657,63 @@ static void MeshInternal_ProcessSensorProperty(uint16_t  property_id,
 
 static void MeshInternal_ProcessPresenceDetected(uint8_t * p_payload, size_t len, uint16_t src_addr)
 {
-  if (len != 0)
+  if (len != 1)
   {
     INFO("Invalid Length Sensor Status message\n");
     return;
   }
 
-  size_t  index = 0;
-  uint8_t value = p_payload[index++];
+  SensorValue_T sensor_value =
+  {
+    .pir                     = p_payload[0]
+  };
 
-  if (value <= 1)
-  {
-    ProcessPresenceDetected(src_addr, (value == 1));
-  }
-  else
-  {
-    INFO("Decoded Sensor Status message from 0x%04X, PRESENCE DETECTED with prohibited value\n", src_addr);
-  }
+  ProcessPresenceDetected(src_addr, sensor_value);
 }
 
 static void MeshInternal_ProcessPresentAmbientLightLevel(uint8_t * p_payload,
                                                          size_t    len,
                                                          uint16_t  src_addr)
+{
+  if (len != 3)
+  {
+    INFO("Invalid Length Sensor Status message\n");
+    return;
+  }
+
+  SensorValue_T sensor_value =
+  {
+    .als                     = ((uint32_t)p_payload[0])
+                             | ((uint32_t)p_payload[1] << 8)
+                             | ((uint32_t)p_payload[2] << 16)
+  };
+
+  ProcessPresentAmbientLightLevel(src_addr, sensor_value);
+}
+
+static void MeshInternal_ProcessDeviceInputPower(uint8_t * p_payload,
+                                                 size_t    len,
+                                                 uint16_t  src_addr)
+{
+  if (len != 3)
+  {
+    INFO("Invalid Length Sensor Status message\n");
+    return;
+  }
+
+  SensorValue_T sensor_value =
+  {
+    .power                   = ((uint32_t)p_payload[0])
+                             | ((uint32_t)p_payload[1] << 8)
+                             | ((uint32_t)p_payload[2] << 16)
+  };
+
+  ProcessPresentDeviceInputPower(src_addr, sensor_value);
+}
+
+static void MeshInternal_ProcessPresentInputCurrent(uint8_t * p_payload,
+                                                    size_t    len,
+                                                    uint16_t  src_addr)
 {
   if (len != 2)
   {
@@ -533,10 +721,50 @@ static void MeshInternal_ProcessPresentAmbientLightLevel(uint8_t * p_payload,
     return;
   }
 
-  size_t   index      = 0;
-  uint32_t value_clux = ((uint32_t)p_payload[index++]);
-  value_clux         |= ((uint32_t)p_payload[index++] << 8);
-  value_clux         |= ((uint32_t)p_payload[index++] << 16);
+  SensorValue_T sensor_value =
+  {
+    .current                 = ((uint32_t)p_payload[0])
+                             | ((uint32_t)p_payload[1] << 8)
+  };
+  
+  ProcessPresentInputCurrent(src_addr, sensor_value);
+}
 
-  ProcessPresentAmbientLightLevel(src_addr, value_clux);
+static void MeshInternal_ProcessPresentInputVoltage(uint8_t * p_payload,
+                                                    size_t    len,
+                                                    uint16_t  src_addr)
+{
+  if (len != 2)
+  {
+    INFO("Invalid Length Sensor Status message\n");
+    return;
+  }
+
+  SensorValue_T sensor_value =
+  {
+    .voltage                 = ((uint32_t)p_payload[0])
+                             | ((uint32_t)p_payload[1] << 8)
+  };
+
+  ProcessPresentInputVoltage(src_addr, sensor_value);
+}
+
+static void MeshInternal_ProcessTotalDeviceEnergyUse(uint8_t * p_payload,
+                                                     size_t    len,
+                                                     uint16_t  src_addr)
+{
+  if (len != 3)
+  {
+    INFO("Invalid Length Sensor Status message\n");
+    return;
+  }
+
+  SensorValue_T sensor_value =
+  {
+    .energy                  = ((uint32_t)p_payload[0])
+                             | ((uint32_t)p_payload[1] << 8)
+                             | ((uint32_t)p_payload[2] << 16)
+  };
+
+  ProcessTotalDeviceEnergyUse(src_addr, sensor_value);
 }

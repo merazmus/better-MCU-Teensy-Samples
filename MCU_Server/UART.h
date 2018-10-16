@@ -332,6 +332,6 @@ extern void ProcessDfuCancelResponse(uint8_t * p_payload, uint8_t len);
 /*
  *  Process Firmware Version set response
  */
-extern void ProcessFirmwareVersionSet(void);
+extern void ProcessFirmwareVersionSetResponse(void);
 
 #endif  // UART_H_

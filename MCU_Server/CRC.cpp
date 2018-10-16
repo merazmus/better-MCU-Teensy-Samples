@@ -27,6 +27,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stddef.h>
 #include <string.h>
 #include "CRC.h"
+#include "Arduino.h"
 
 /********************************************
  * LOCAL #define CONSTANTS AND MACROS       *
@@ -80,6 +81,11 @@ typedef struct __SHA256_State_Tag {
  */
 static uint16_t __calcCRC16(uint8_t data, uint16_t crc);
 
+/**
+ * Internal CRC16 calculations, byte reflection
+ */
+static uint8_t __calcCRC16_ReflectByte(uint8_t crc);
+
 /*
  *  Internal SHA256 calculations
  */
@@ -95,6 +101,7 @@ static bool __calcSHA256_Chunk(uint8_t chunk[SHA256_CHUNK_SIZE], __SHA256_State_
  */
 static inline uint32_t __calcSHA256_RightRotation(uint32_t value, unsigned int count);
 
+
 /********************************************
  * EXPORTED FUNCTION DEFINITIONS            *
  ********************************************/
@@ -102,13 +109,27 @@ static inline uint32_t __calcSHA256_RightRotation(uint32_t value, unsigned int c
 uint16_t CalcCRC16(uint8_t * data, size_t len, uint16_t init_val)
 {
   uint16_t crc = init_val;
-
   for (size_t i = 0; i < len; i++)
   {
     crc = __calcCRC16(data[i], crc);
   }
 
   return crc;
+}
+
+uint16_t CalcCRC16_Modbus(uint8_t * data, size_t len, uint16_t init_val)
+{
+  uint16_t crc = init_val;
+  for (size_t i = 0; i < len; i++)
+  {
+    crc = __calcCRC16(__calcCRC16_ReflectByte(data[i]), crc);
+  }
+
+  uint16_t result = 0;
+  result |= (uint16_t) __calcCRC16_ReflectByte(lowByte(crc));
+  result |= (uint16_t) __calcCRC16_ReflectByte(highByte(crc)) << 8;
+
+  return result;
 }
 
 uint32_t CalcCRC32(uint8_t * data, size_t len, uint32_t init_val)
@@ -150,6 +171,22 @@ static uint16_t __calcCRC16(uint8_t data, uint16_t crc)
   }
 
   return crc;
+}
+
+static uint8_t __calcCRC16_ReflectByte(uint8_t crc)
+{
+  uint8_t result = 0;
+
+  result |= (uint8_t) (crc & 0x01u) << 7;
+  result |= (uint8_t) (crc & 0x02u) << 5;
+  result |= (uint8_t) (crc & 0x04u) << 3;
+  result |= (uint8_t) (crc & 0x08u) << 1;
+  result |= (uint8_t) (crc & 0x10u) >> 1;
+  result |= (uint8_t) (crc & 0x20u) >> 3;
+  result |= (uint8_t) (crc & 0x40u) >> 5;
+  result |= (uint8_t) (crc & 0x80u) >> 7;
+
+  return result;
 }
 
 static void __calcSHA256(uint32_t hash[32], const void * input, size_t len)

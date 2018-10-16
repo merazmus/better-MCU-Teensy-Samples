@@ -22,43 +22,57 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MCU_LCD_H
 #define MCU_LCD_H
 
-
 /*******************************************
  * INCLUDES                                *
  *******************************************/
 
 #include "stdlib.h"
+#include "stdint.h"
+#include "MCU_Definitions.h"
+#include "MCU_Sensor.h"
 
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
  ********************************************/
 
 /*
- *  Write line on LCD
- *
- *  @param line    Line number
- *  @param * text  Text to write
- */
-void WriteLineLCD(size_t line, const char * text);
-
-/*
- *  Clear LCD
- */
-void ClearLCD(void);
-
-/*
- *  Repaint LCD
- */
-void RepaintLCD(void);
-
-/*
  *  Setup LCD hardware
  */
-void SetupLCD(void);
+void LCD_Setup(void);
 
 /*
- *  LCD main function, should be called in Arduino main loop
+ *  Update displayed Modem state
  */
-void LoopLCD(void);
+void LCD_UpdateModemState(ModemState_t modemState);
+
+/*
+ *  Update displayed Modem FW version
+ */
+void LCD_UpdateModemFwVersion(char * fwVersion, uint8_t fwVerLen);
+
+/*
+ *  Update displayed Sensor value
+ */
+void LCD_UpdateSensorValue(SensorProperty_T sensorProperty, SensorValue_T sensorValue);
+
+/*
+ *  Update DFU in progress state
+ */
+void LCD_UpdateDfuState(bool dfuInProgress);
+
+/*
+ *  LCD refresh function, should be called in Arduino main loop
+ */
+void LCD_Loop(void);
+
+/*
+ *  Reinit LCD in case of LCD driver failure
+ */
+void LCD_Reinit(void);
+
+/*
+ *	Sets Sensors values to Unknown state on LCD screen
+ */
+void LCD_EraseSensorsValues(void);
 
 #endif  // MCU_LCD

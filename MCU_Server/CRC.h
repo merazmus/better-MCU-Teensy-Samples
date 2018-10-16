@@ -52,6 +52,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 uint16_t CalcCRC16(uint8_t * data, size_t len, uint16_t init_val);
 
 /*
+ *  Calculate CRC16 MODBUS
+ *
+ *  @param * data       Pointer to data
+ *  @param len          Data len
+ *  @param init_val     CRC init val
+ *  @return             Calculated CRC
+ */
+uint16_t CalcCRC16_Modbus(uint8_t * data, size_t len, uint16_t init_val);
+
+/*
  *  Calculate CRC32
  *
  *  @param * data       Pointer to data

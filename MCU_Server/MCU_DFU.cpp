@@ -140,7 +140,7 @@ void ProcessDfuInitRequest(uint8_t * p_payload, uint8_t len)
 
   for(size_t i = 0; i < SHA256_SIZE; i++)
   {
-    Sha256[i] = p_payload[index++];
+    Sha256[SHA256_SIZE - i - 1] = p_payload[index++];
   }
 
   uint8_t   app_data_len = p_payload[index++];
@@ -335,7 +335,7 @@ void ProcessDfuPageStoreRequest(uint8_t * p_payload, uint8_t len)
 
   uint8_t calculated_sha256[SHA256_SIZE];
   CalcSHA256((uint8_t *) Flasher_GetSpaceAddr(), FirmwareOffset, calculated_sha256);
-  bool is_object_valid = memcmp(calculated_sha256, Sha256, SHA256_SIZE);
+  bool is_object_valid = (0 == memcmp(calculated_sha256, Sha256, SHA256_SIZE));
 
   if(!is_object_valid)
   {
@@ -344,6 +344,7 @@ void ProcessDfuPageStoreRequest(uint8_t * p_payload, uint8_t len)
 
     INFO("DFU Invalid object\n");
     MCU_DFU_ClearStates();
+    return;
   }
 
   uint8_t response[] = {DFU_FIRMWARE_SUCCESSFULLY_UPDATED};

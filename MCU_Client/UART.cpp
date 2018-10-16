@@ -392,9 +392,9 @@ void UART_ProcessIncomingCommand(void)
       ProcessDfuCancelResponse(rx_frame.p_payload, rx_frame.len);
       break;
     }
-    case UART_CMD_FIRMWARE_VERSION_SET_RESP:
+    case UART_CMD_FACTORY_RESET_EVENT:
     {
-      ProcessFirmwareVersionSet();
+      ProcessFactoryResetEvent();
       break;
     }
   }
@@ -501,7 +501,7 @@ static bool ExtractFrameFromBuffer(RxFrame_t * rx_frame)
       count++;
     }
     else {
-      count = 0;
+      count = 0;    
     }
   }
   else if (count == CMD_OFFSET)

@@ -429,7 +429,7 @@ void UART_ProcessIncomingCommand(void)
     }    
     case UART_CMD_FIRMWARE_VERSION_SET_RESP:
     {
-      ProcessFirmwareVersionSet();
+      ProcessFirmwareVersionSetResponse();
       break;
     }
   }
@@ -536,7 +536,7 @@ static bool ExtractFrameFromBuffer(RxFrame_t * rx_frame)
       count++;
     }
     else {
-      count = 0;
+      count = 0;    
     }
   }
   else if (count == CMD_OFFSET)

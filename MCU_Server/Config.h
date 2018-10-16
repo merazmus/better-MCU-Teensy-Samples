@@ -32,11 +32,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * LOCAL #define CONSTANTS AND MACROS       *
  ********************************************/
 
+#define ENABLE_LC                   1   /**< Enable LC support */
 #define ENABLE_CTL                  0   /**< Enable CTL support */
-#define MODULE_1_10_V               1   /**< Define for calculate lightness for 0-10 V (value 0) or 1-10 V (value 1) */
+#define ENABLE_PIRALS               1   /**< Enable PIR and ALS support */
+#define ENABLE_ENERGY               1   /**< Enable energy monitoring support */
+#define ENABLE_1_10_V               0   /**< Define for calculate lightness for 0-10 V (value 0) or 1-10 V (value 1) */
 
 #define BUILD_NUMBER                "0000"                   /**< Defines firmware build number. */
-#define FIRMWARE_VERSION            "S" BUILD_NUMBER         /**< Defines firmware version. */
 #define DFU_VALIDATION_STRING       "server"                 /**< Defines string to be expected in app data */
 
 #define INSTANCE_INDEX_UNKNOWN      UINT8_MAX                /**< Defines unknown instance index value */
@@ -51,6 +53,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define DEBUG_INTERFACE_BAUDRATE    115200      /**< Defines baudrate of debug interface */
 #define UART_INTERFACE              (Serial2)   /**< Defines serial port to communicate with modem */
 #define UART_INTERFACE_BAUDRATE     57600       /**< Defines baudrate of modem interface */
+#define MODBUS_INTERFACE            (Serial3)   /**< Defines serial port to communicate with modem */
+#define MODBUS_INTERFACE_BAUDRATE   2400        /**< Defines baudrate of modem interface */
 
 #define PIN_LED_1                   11  /**< Defines led 1 pin. */
 #define PIN_LED_2                   12  /**< Defines led 2 pin. */
@@ -68,8 +72,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define BUTTON_DEBOUNCE_TIME_MS     20  /**< Defines buttons debounce time in milliseconds. */
 
-#define PIR_REGISTRATION_ORDER      1   /**< Defines sensor servers registration order */
-#define ALS_REGISTRATION_ORDER      2   /**< Defines sensor servers registration order */
+#if ENABLE_PIRALS == 1
+#define PIR_REGISTRATION_ORDER         1   /**< Defines sensor servers registration order */
+#define ALS_REGISTRATION_ORDER         2   /**< Defines sensor servers registration order */
+#else
+#define PIR_REGISTRATION_ORDER         0   /**< Defines sensor servers registration order */
+#define ALS_REGISTRATION_ORDER         0   /**< Defines sensor servers registration order */
+#endif
+
+#define VOLT_CURR_REGISTRATION_ORDER   (ALS_REGISTRATION_ORDER + 1)         /**< Defines sensor servers registration order */
+#define POW_ENERGY_REGISTRATION_ORDER  (VOLT_CURR_REGISTRATION_ORDER + 1)   /**< Defines sensor servers registration order */
 
 #define PWM_RESOLUTION              16  /**< Defines PWM resolution value */
 

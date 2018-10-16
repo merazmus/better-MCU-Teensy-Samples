@@ -33,7 +33,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  ********************************************/
 
 #define BUILD_NUMBER                "0000"                   /**< Defines firmware build number. */
-#define FIRMWARE_VERSION            "C" BUILD_NUMBER         /**< Defines firmware version. */
 #define DFU_VALIDATION_STRING       "client"                 /**< Defines string to be expected in app data */
 
 #define INSTANCE_INDEX_UNKNOWN      UINT8_MAX /**< Defines unknown instance index value. */
@@ -64,15 +63,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ENCODER_DEBOUNCE_TIME_US    300     /**< Defines encoder debounce time in microseconds. */
 #define ATTENTION_TIME_US           500000  /**< Defines attention state change time in microseconds. */
 #define DATA_VALIDITY_PERIOD_MS     3000    /**< Defines sensor data validity period. */
-
-#define LCD_ROWS                    4                           /**< Defines number of LCD rows. */
-#define LCD_COLUMNS                 20                          /**< Defines number of LCD columns. */
-#define LCD_UPDATE_INTV             500                         /**< Defines LCD update interval. */
-#define LCD_DEVICE_STATE_LINE       0                           /**< Defines LCD line content. */
-#define LCD_VERSION_LINE            (LCD_DEVICE_STATE_LINE + 1) /**< Defines LCD line content. */
-#define LCD_SENSOR_PIR_LINE         (LCD_VERSION_LINE + 1)      /**< Defines LCD line content. */
-#define LCD_SENSOR_ALS_LINE         (LCD_SENSOR_PIR_LINE + 1)   /**< Defines LCD line content. */
-#define LCD_DFU_LINE                LCD_SENSOR_ALS_LINE         /**< Defines LCD line content. */
 
 #define LOG_INFO_ENABLE             0   /**< Enables INFO level logs */
 #define LOG_DEBUG_ENABLE            0   /**< Enables DEBUG level logs Enabling this make DFU impossible, due to implementation of UART in Arduino. */

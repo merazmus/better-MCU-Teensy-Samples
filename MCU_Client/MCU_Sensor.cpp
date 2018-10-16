@@ -42,11 +42,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * STATIC VARIABLES                         *
  ********************************************/
 
-static uint32_t      AlsValueCLux    = 0;
-static unsigned long AlsTimestamp    = (ULONG_MAX - DATA_VALIDITY_PERIOD_MS);
-static bool          PirValue        = false;
-static unsigned long PirTimestamp    = (ULONG_MAX - DATA_VALIDITY_PERIOD_MS);
-static uint8_t       SensorClientIdx = INSTANCE_INDEX_UNKNOWN;
+static uint8_t SensorClientIdx = INSTANCE_INDEX_UNKNOWN;
 
 /********************************************
  * EXPORTED FUNCTION DEFINITIONS            *
@@ -62,52 +58,59 @@ uint8_t GetInstanceIdxSensor(void)
   return SensorClientIdx;
 }
 
-void ProcessPresentAmbientLightLevel(uint16_t src_addr, uint32_t value_clux)
+void ProcessPresentAmbientLightLevel(uint16_t src_addr, SensorValue_T sensor_value)
 {
-  AlsTimestamp = millis();
-  AlsValueCLux = value_clux;
-  INFO("Decoded Sensor Status message from 0x%04X [%d ms], PRESENT AMBIENT LIGHT LEVEL with value of: %d.%02d\n\n", src_addr, AlsTimestamp, value_clux/100, value_clux%100);
+  INFO("Decoded Sensor Status message from 0x%04X [%d ms], PRESENT AMBIENT LIGHT LEVEL with value of: %d.%02d\n\n", src_addr,
+                                                                                                                    millis(),
+                                                                                                                    sensor_value.als/100,
+                                                                                                                    sensor_value.als%100);
+  LCD_UpdateSensorValue(PRESENT_AMBIENT_LIGHT_LEVEL, sensor_value);
 }
 
-void ProcessPresenceDetected(uint16_t src_addr, bool value)
+void ProcessPresenceDetected(uint16_t src_addr, SensorValue_T sensor_value)
 {
-  PirTimestamp = millis();
-  PirValue     = value;
-  INFO("Decoded Sensor Status message from 0x%04X [%d ms], PRESENCE DETECTED with value of: %d\n\n", src_addr, PirTimestamp, PirValue);
+  INFO("Decoded Sensor Status message from 0x%04X [%d ms], PRESENCE DETECTED with value of: %d\n\n", src_addr,
+                                                                                                     millis(),
+                                                                                                     sensor_value.pir);
+  LCD_UpdateSensorValue(PRESENCE_DETECTED, sensor_value);
+}
+
+void ProcessPresentDeviceInputPower(uint16_t src_addr, SensorValue_T sensor_value)
+{
+  INFO("Decoded Sensor Status message from 0x%04X [%d ms], PRESENT DEVICE INPUT POWER with value of: %d.%02d\n\n", src_addr,
+                                                                                                                   millis(),
+                                                                                                                   sensor_value.power/10,
+                                                                                                                   sensor_value.power%10);
+  LCD_UpdateSensorValue(PRESENT_DEVICE_INPUT_POWER, sensor_value);
+}
+
+void ProcessPresentInputCurrent(uint16_t src_addr, SensorValue_T sensor_value)
+{
+  INFO("Decoded Sensor Status message from 0x%04X [%d ms], PRESENT INPUT CURRENT with value of: %d.%02d\n\n", src_addr,
+                                                                                                              millis(),
+                                                                                                              sensor_value.current/100,
+                                                                                                              sensor_value.current%100);
+  LCD_UpdateSensorValue(PRESENT_INPUT_CURRENT, sensor_value);
+}
+
+void ProcessPresentInputVoltage(uint16_t src_addr, SensorValue_T sensor_value)
+{
+  INFO("Decoded Sensor Status message from 0x%04X [%d ms], PRESENT INPUT VOLTAGE with value of: %d.%02d\n\n", src_addr,
+                                                                                                              millis(),
+                                                                                                              sensor_value.voltage/64,
+                                                                                                              (sensor_value.voltage%64)*100/64);
+  LCD_UpdateSensorValue(PRESENT_INPUT_VOLTAGE, sensor_value);
+}
+
+void ProcessTotalDeviceEnergyUse(uint16_t src_addr, SensorValue_T sensor_value)
+{
+  INFO("Decoded Sensor Status message from 0x%04X [%d ms], TOTAL DEVICE ENERGY USE with value of: %d.%02d\n\n", src_addr,
+                                                                                                                millis(),
+                                                                                                                sensor_value.energy);
+  LCD_UpdateSensorValue(TOTAL_DEVICE_ENERGY_USE, sensor_value);
 }
 
 void SetupSensor(void)
 {
   INFO("Sensor client initialization.\n");
-}
-
-void LoopSensor(void)
-{
-  char          text[LCD_COLUMNS];
-  unsigned long timestamp = millis();
-
-  const int integral   = AlsValueCLux/100;
-  const int fractional = AlsValueCLux%100;
-
-  strcpy(text, "ALS: ");
-  itoa(integral, text + strlen(text), 10);
-  strcpy(text + strlen(text), ".00");
-  itoa(fractional, text + strlen(text) - (fractional < 10 ? 1 : 2), 10);
-
-  if (((AlsTimestamp + DATA_VALIDITY_PERIOD_MS) <= timestamp) || (AlsTimestamp >= timestamp))
-  {
-    strcpy(text + strlen(text), " (N/A)");
-  }
-
-  WriteLineLCD(LCD_SENSOR_ALS_LINE, text);
-
-  strcpy(text, "PIR: ");
-  itoa(PirValue, text + strlen(text), 10);
-
-  if (((PirTimestamp + DATA_VALIDITY_PERIOD_MS) <= timestamp) || (PirTimestamp >= timestamp))
-  {
-    strcpy(text + strlen(text), " (N/A)");
-  }
-
-  WriteLineLCD(LCD_SENSOR_PIR_LINE, text);
 }

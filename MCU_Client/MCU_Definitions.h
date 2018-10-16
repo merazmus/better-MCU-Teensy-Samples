@@ -19,32 +19,20 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef MCU_DFU_H
-#define MCU_DFU_H
+#ifndef MCU_DEFINITIONS_H
+#define MCU_DEFINITIONS_H
 
 /********************************************
- * INCLUDES                                 *
+ * EXPORTED TYPES DEFINITIONS               *
  ********************************************/
 
-#include <stdint.h>
-#include "Flasher.h"
+typedef enum
+{
+  MODEM_STATE_INIT_DEVICE,
+  MODEM_STATE_DEVICE,
+  MODEM_STATE_INIT_NODE,
+  MODEM_STATE_NODE,
+  MODEM_STATE_UNKNOWN,
+} ModemState_t;
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
-
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
-
-/*
- * Setup DFU
- */
-void SetupDFU(void);
-
-/*
- * Get DFU state
- */
-bool MCU_DFU_IsInProgress(void);
-
-#endif  // MCU_DFU_H
+#endif // MCU_DEFINITIONS_H

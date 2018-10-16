@@ -37,7 +37,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define PWM_OUTPUT_MAX UINT16_MAX
 
-#if MODULE_1_10_V
+#if ENABLE_1_10_V
 #define PWM_OUTPUT_MIN (uint16_t)(0.12 * PWM_OUTPUT_MAX)
 #else
 #define PWM_OUTPUT_MIN 0u
@@ -52,6 +52,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define ATTENTION_LIGHTNESS_ON  0xFFFF
 #define ATTENTION_LIGHTNESS_OFF (0xFFFF * 4 / 10)
 
+#define DEVICE_STARTUP_SEQ_STAGE_DURATION_MS    300
+#define DEVICE_STARTUP_SEQ_STAGE_1_LIGHTNESS    0xFFFF
+#define DEVICE_STARTUP_SEQ_STAGE_2_LIGHTNESS    0x0000
+#define DEVICE_STARTUP_SEQ_STAGE_3_LIGHTNESS    0xFFFF
+#define DEVICE_STARTUP_SEQ_STAGE_4_LIGHTNESS    0x0000
+#define DEVICE_STARTUP_SEQ_STAGE_5_LIGHTNESS    0x7FFF
+#define DEVICE_STARTUP_SEQ_STAGE_6_LIGHTNESS    0x0000
+#define DEVICE_STARTUP_SEQ_STAGE_OFF_LIGHTNESS  0x7FFF
+
 /********************************************
  * LOCAL TYPES DEFINITIONS                  *
  ********************************************/
@@ -63,6 +72,17 @@ struct Transition
   uint32_t start_timestamp;
   uint32_t transition_time;
 };
+
+typedef enum
+{
+  DEVICE_SEQUENCE_STAGE_1,
+  DEVICE_SEQUENCE_STAGE_2,
+  DEVICE_SEQUENCE_STAGE_3,
+  DEVICE_SEQUENCE_STAGE_4,
+  DEVICE_SEQUENCE_STAGE_5,
+  DEVICE_SEQUENCE_STAGE_6,
+  DEVICE_SEQUENCE_STAGE_OFF,
+} DeviceStartupSequence_T;
 
 /********************************************
  * LOCAL FUNCTIONS PROTOTYPES               *
@@ -121,9 +141,10 @@ static Transition Temperature = {
   .transition_time = 0,
 };
 
-static bool          CTLSupport              = false;
-static uint8_t       LightLightnessServerIdx = INSTANCE_INDEX_UNKNOWN;
-static volatile bool AttentionLedState       = false;
+static bool                    CTLSupport                      = false;
+static uint8_t                 LightLightnessServerIdx         = INSTANCE_INDEX_UNKNOWN;
+static volatile bool           AttentionLedState               = false;
+static bool                    UnprovisionedSequenceEnableFlag = false;
 
 /********************************************
  * LOCAL FUNCTIONS DEFINITIONS              *
@@ -207,6 +228,39 @@ static void UpdateTransition(uint16_t current, uint16_t target, uint32_t transit
   interrupts();
 }
 
+static void PerformStartupSequenceIfNeeded(void)
+{
+
+  static DeviceStartupSequence_T current_startup_sequence_stage =   DEVICE_SEQUENCE_STAGE_OFF;
+  static long                    sequence_start                 =   UINT32_MAX;
+  uint16_t                       startup_sequence_lightness[]   = { DEVICE_STARTUP_SEQ_STAGE_1_LIGHTNESS,
+                                                                    DEVICE_STARTUP_SEQ_STAGE_2_LIGHTNESS,
+                                                                    DEVICE_STARTUP_SEQ_STAGE_3_LIGHTNESS,
+                                                                    DEVICE_STARTUP_SEQ_STAGE_4_LIGHTNESS,
+                                                                    DEVICE_STARTUP_SEQ_STAGE_5_LIGHTNESS,
+                                                                    DEVICE_STARTUP_SEQ_STAGE_6_LIGHTNESS,
+                                                                    DEVICE_STARTUP_SEQ_STAGE_OFF_LIGHTNESS };
+  if(UnprovisionedSequenceEnableFlag)
+  {
+    sequence_start                  = millis();
+    UnprovisionedSequenceEnableFlag = false;
+    current_startup_sequence_stage     = DEVICE_SEQUENCE_STAGE_1;
+
+    ProcessTargetLightness(0, startup_sequence_lightness[current_startup_sequence_stage], 0);
+  }
+
+  unsigned long           sequence_duration = millis() - sequence_start;
+  DeviceStartupSequence_T calculated_stage  =
+    (DeviceStartupSequence_T)(sequence_duration / DEVICE_STARTUP_SEQ_STAGE_DURATION_MS);
+
+  if (current_startup_sequence_stage != DEVICE_SEQUENCE_STAGE_OFF
+   && current_startup_sequence_stage != calculated_stage)
+  {
+    current_startup_sequence_stage = calculated_stage;
+    ProcessTargetLightness(0, startup_sequence_lightness[current_startup_sequence_stage], 0);
+  }
+}
+
 /********************************************
  * EXPORTED FUNCTION DEFINITIONS            *
  ********************************************/
@@ -261,4 +315,10 @@ void SetupLightnessServer(void)
 
 void LoopLightnessServer(void)
 {
+  PerformStartupSequenceIfNeeded();
+}
+
+void EnableStartupSequence(void)
+{
+  UnprovisionedSequenceEnableFlag = true;
 }

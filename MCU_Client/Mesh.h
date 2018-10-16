@@ -28,6 +28,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "stddef.h"
 #include "stdint.h"
+#include "MCU_Sensor.h"
 
 /********************************************
  * EXPORTED #define CONSTANTS AND MACROS    *
@@ -45,6 +46,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
  ********************************************/
+
+/*
+ *  Whis function should be called in Arduino main loop
+ */
+void Mesh_Loop(void);
 
 /*
  *  Search for model ID in a message
@@ -65,57 +71,55 @@ bool Mesh_IsModelAvailable(uint8_t * p_payload, uint8_t len, uint16_t expected_m
 void Mesh_ProcessMeshCommand(uint8_t * p_payload, size_t len);
 
 /*
- *  Send Generic OnOff Set message with repeats
+ *  Send Generic OnOff Set Unacknowledged message with repeats.
  *
- *  @param instance_idx      Instance index
- *  @param value             Generic OnOff value
- *  @param transition_time   Transition time (mesh format)
- *  @param delay_ms          Delay in miliseconds
+ *  @param instance_idx        Instance index.
+ *  @param value               Generic OnOff target value.
+ *  @param transition_time     Transition time (mesh format).
+ *  @param delay_ms            Delay in miliseconds.
+ *  @param num_of_repeats      Number of message repeats.
+ *  @param is_new_transaction  Is it a new transaction?
  */
 void Mesh_SendGenericOnOffSet(uint8_t  instance_idx,
                               bool     value,
                               unsigned transition_time,
-                              unsigned delay_ms);
+                              unsigned delay_ms,
+                              uint8_t  num_of_repeats,
+                              bool     is_new_transaction);
 
 /*
- *  Send Light Lightness Set message with repeats
+ *  Send Light Lightness Set Unacknowledged message with repeats.
  *
- *  @param instance_idx      Instance index
- *  @param value             Light Lightness value
- *  @param transition_time   Transition time (mesh format)
- *  @param delay_ms          Delay in miliseconds
- *  @param is_new            Is it a new transation?
+ *  @param instance_idx        Instance index.
+ *  @param value               Light Lightness target value.
+ *  @param transition_time     Transition time (mesh format).
+ *  @param delay_ms            Delay in miliseconds.
+ *  @param num_of_repeats      Number of message repeats.
+ *  @param is_new_transaction  Is it a new transaction?
  */
 void Mesh_SendLightLightnessSet(uint8_t  instance_idx,
                                 uint16_t value,
                                 unsigned transition_time,
-                                unsigned delay_ms);
+                                unsigned delay_ms,
+                                uint8_t  num_of_repeats,
+                                bool     is_new_transaction);
 
 /*
- *  Send Generic Delta Set message with repeats
+ *  Send Generic Delta Set Unacknowledged message with repeats.
  *
- *  @param instance_idx      Instance index
- *  @param value             Generic OnOff value
- *  @param transition_time   Transition time (mesh format)
- *  @param delay_ms          Delay in miliseconds
- *  @param is_new            Is it a new transation?
+ *  @param instance_idx        Instance index.
+ *  @param value               Delta change of the value.
+ *  @param transition_time     Transition time (mesh format).
+ *  @param delay_ms            Delay in miliseconds.
+ *  @param num_of_repeats      Number of message repeats.
+ *  @param is_new_transaction  Is it a new transaction?
  */
 void Mesh_SendGenericDeltaSet(uint8_t  instance_idx,
                               int32_t  value,
-                              bool     is_new,
                               unsigned transition_time,
-                              unsigned delay_ms);
-
-/*
- *  Send Light Lightness Controller Mode Set message with repeats
- *
- *  @param instance_idx      Instance index
- *  @param value             Generic OnOff value
- *  @param transition_time   Transition time (mesh format)
- *  @param delay_ms          Delay in miliseconds
- *  @param is_new            Is it a new transation?
- */
-void Mesh_SendLightLightnessControllerModeSet(uint8_t instance_idx, bool value, unsigned repeats);
+                              unsigned delay_ms,
+                              uint8_t  num_of_repeats,
+                              bool     is_new_transaction);
 
 /*
  *  Process ALS update
@@ -123,7 +127,7 @@ void Mesh_SendLightLightnessControllerModeSet(uint8_t instance_idx, bool value, 
  *  @param value_clux  New ALS value in clux
  *  @param src_addr    Source address
  */
-extern void ProcessPresentAmbientLightLevel(uint16_t src_addr, uint32_t value_clux);
+extern void ProcessPresentAmbientLightLevel(uint16_t src_addr, SensorValue_T sensor_value);
 
 /*
  *  Process PIR update
@@ -131,6 +135,38 @@ extern void ProcessPresentAmbientLightLevel(uint16_t src_addr, uint32_t value_cl
  *  @param value       New PIR value
  *  @param src_addr    Source address
  */
-extern void ProcessPresenceDetected(uint16_t src_addr, bool value);
+extern void ProcessPresenceDetected(uint16_t src_addr, SensorValue_T sensor_value);
+
+/*
+ *  Process Power value update
+ *
+ *  @param value       New Power value
+ *  @param src_addr    Source address
+ */
+extern void ProcessPresentDeviceInputPower(uint16_t src_addr, SensorValue_T sensor_value);
+
+/*
+ *  Process Current value update
+ *
+ *  @param value       New Current value
+ *  @param src_addr    Source address
+ */
+extern void ProcessPresentInputCurrent(uint16_t src_addr, SensorValue_T sensor_value);
+
+/*
+ *  Process Voltage value update
+ *
+ *  @param value       New Voltage value
+ *  @param src_addr    Source address
+ */
+extern void ProcessPresentInputVoltage(uint16_t src_addr, SensorValue_T sensor_value);
+
+/*
+ *  Process Energy value update
+ *
+ *  @param value       New Energy value
+ *  @param src_addr    Source address
+ */
+extern void ProcessTotalDeviceEnergyUse(uint16_t src_addr, SensorValue_T sensor_value);
 
 #endif  // MESH_H_

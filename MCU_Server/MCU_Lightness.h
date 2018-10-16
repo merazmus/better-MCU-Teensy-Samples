@@ -92,6 +92,11 @@ void SetupLightnessServer(void);
 void LoopLightnessServer(void);
 
 /*
+ *  Enable startup sequence
+ */
+void EnableStartupSequence(void);
+
+/*
  *  Indicate attention using lightness output
  *
  *  @param attention_state     Attention state
