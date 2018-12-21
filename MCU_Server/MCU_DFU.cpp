@@ -23,7 +23,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * INCLUDES                                *
  *******************************************/
 
-#include "EEPROM.h"
 #include "MCU_DFU.h"
 #include <string.h>
 #include "UART.h"
@@ -58,11 +57,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**< Defines string that forces update */
 #define DFU_VALIDATION_IGNORE_STRING      "ignore"
 
-/**< Defines flash */
-#define FLASH_SECTOR_SIZE                       1024u                              /*<< Flash sector size    */
-#define FLASH_EEPROM_BEGIN                      (uint32_t)(62 * FLASH_SECTOR_SIZE) /*<< EEPROM begin address */
-#define FLASH_EEPROM_END                        (uint32_t)(64 * FLASH_SECTOR_SIZE) /*<< EEPROM end address   */
-
 /********************************************
  * STATIC VARIABLES                         *
  ********************************************/
@@ -85,26 +79,9 @@ static size_t  PageSize                  = 0;
 static void MCU_DFU_ClearStates(void);
 
 /*
- *  Load DFU states from EEPROM
- */
-static void MCU_DFU_LoadStates(void);
-
-/*
- *  Save DFU states from EEPROM
- */
-static void MCU_DFU_SaveStates(void);
-
-/*
  *  Calculate CRC of data saved in flash and ram
  */
 static uint32_t MCU_DFU_CalcCRC(void);
-
-/*
- *  Fix emulated EEPROM.
- *
- * @note Due to bug in Teensy LC EEPROM library there is required function to fix values in EEPROM.
- */
-static void MCU_DFU_FixEeprom(void);
 
 /********************************************
  * EXPORTED FUNCTION DEFINITIONS            *
@@ -112,14 +89,10 @@ static void MCU_DFU_FixEeprom(void);
 
 void SetupDFU(void)
 {
-  INFO("DFU space start addr: %016X\n\n",Flasher_GetSpaceAddr());
-  INFO("DFU available bytes: %d\n\n",Flasher_GetSpaceSize());
+  MCU_DFU_ClearStates();
 
-  MCU_DFU_LoadStates();
-
-  INFO("Initial DfuInProgress: %d\n", DfuInProgress);
-  INFO("Initial FirmwareSize: %d\n", FirmwareSize);
-  INFO("Initial FirmwareOffset: %d\n", FirmwareOffset);
+  INFO("DFU space start addr: %016X\n\n", Flasher_GetSpaceAddr());
+  INFO("DFU available bytes:  %d\n\n",    Flasher_GetSpaceSize());
 }
 
 bool MCU_DFU_IsInProgress(void)
@@ -319,8 +292,6 @@ void ProcessDfuPageStoreRequest(uint8_t * p_payload, uint8_t len)
 
   if(FirmwareOffset != FirmwareSize)
   {
-    MCU_DFU_SaveStates();
-
     uint8_t response[] = {DFU_SUCCESS};
     UART_SendDfuPageStoreResponse(response, sizeof(response));
     
@@ -330,7 +301,6 @@ void ProcessDfuPageStoreRequest(uint8_t * p_payload, uint8_t len)
   else
   {
     DfuInProgress = 0;
-    MCU_DFU_SaveStates();
   }
 
   uint8_t calculated_sha256[SHA256_SIZE];
@@ -398,83 +368,6 @@ static void MCU_DFU_ClearStates(void)
 
   memset(Sha256, 0, SHA256_SIZE);
   memset(PageBuffer, 0, MAX_PAGE_SIZE);
-
-  MCU_DFU_SaveStates();
-}
-
-static void MCU_DFU_FixEeprom(void)
-{
-  // This is workaround for problems with emulated EEPROM
-  for (uint32_t addr = FLASH_EEPROM_BEGIN; addr < FLASH_EEPROM_END; addr += sizeof(uint32_t))
-  {
-    uint32_t word = *(uint32_t *)addr;
-
-    if (0xFFFFFFFF == word) continue;
-
-    if (0xFFFF0000 == (word & 0xFFFF0000))
-    {
-      uint32_t new_word = (word << 16) | (word & 0xFFFF);
-      Flasher_FlashWord(addr, new_word, true);
-    }
-    else if (0x0000FFFF == (word & 0x0000FFFF))
-    {
-      uint32_t new_word = (word & 0xFFFF0000) | (word >> 16);
-      Flasher_FlashWord(addr, new_word, true);
-    }
-  }
-}
-
-static void MCU_DFU_LoadStates(void)
-{
-  MCU_DFU_FixEeprom();
-
-  size_t index = 0;
-
-  EEPROM.get(index, DfuInProgress);
-  index += sizeof(DfuInProgress);
-
-  //0xFF means that value in EEPROM has not been initialized.
-  if (DfuInProgress == 0xFF)
-  {
-    MCU_DFU_ClearStates();
-  }
-
-  EEPROM.get(index, FirmwareSize);
-  index += sizeof(FirmwareSize);
-
-  EEPROM.get(index, FirmwareOffset);
-  index += sizeof(FirmwareOffset);
-
-  for(size_t i = 0; i < SHA256_SIZE; i++)
-  {
-    EEPROM.get(index++, Sha256[i]);
-  }
-
-  PageOffset = 0;
-  PageSize   = 0;
-  memset(PageBuffer, 0, MAX_PAGE_SIZE);
-}
-
-static void MCU_DFU_SaveStates(void)
-{
-  size_t index = 0;
-
-  //Negate values to match Flash 1-on-cleared convention
-  EEPROM.put(index, DfuInProgress);
-  index += sizeof(DfuInProgress);
-
-  EEPROM.put(index, FirmwareSize);
-  index += sizeof(FirmwareSize);
-
-  EEPROM.put(index, FirmwareOffset);
-  index += sizeof(FirmwareOffset);
-
-  for(size_t i = 0; i < SHA256_SIZE; i++)
-  {
-    EEPROM.put(index++, Sha256[i]);
-  }
-
-  MCU_DFU_FixEeprom();
 }
 
 static uint32_t MCU_DFU_CalcCRC(void)

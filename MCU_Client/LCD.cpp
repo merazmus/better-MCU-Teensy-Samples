@@ -36,7 +36,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define LCD_SCREEN_SWITCH_INTV_MS          5000           /**< Defines LCD screen switch interval. */
 #define LCD_ROWS_NUMBER                    4              /**< Defines number of LCD rows. */
 #define LCD_COLUMNS_NUMBER                 20             /**< Defines number of LCD columns. */
-#define SCREEN_DFU_MAX_NUMBER_OF_DOTS      5              /**< Maximum number of dots on DFU screen while updating. */
 
 #define LCD_PIR_VALUE_EXP_MS               60000          /**< PIR Sensor value expiration time in milliseconds. */
 #define LCD_ALS_VALUE_EXP_MS               60000          /**< ALS Sensor value expiration time in milliseconds. */
@@ -172,11 +171,6 @@ static void DisplayModemState(uint8_t lineNumber, ModemState_t modemState);
  *  Display LCD screen
  */
 static void DisplayScreen(uint8_t screenNum);
-
-/*
- *  Display dots during DFU update
- */
-static void DisplayDfuDots(uint8_t lineNumber, uint8_t numberOfDots);
 
 /*
  *  Switch to another Screen
@@ -358,10 +352,6 @@ static void DisplayScreen(uint8_t screenNum)
       if (LCD_DfuInProgress)
       {
         DisplayLine(0, "DFU in progress");
-
-        static int numberOfDots = 0;
-        DisplayDfuDots(1, numberOfDots++);
-        if (numberOfDots > SCREEN_DFU_MAX_NUMBER_OF_DOTS) numberOfDots = 0;
       }
 
       break;
@@ -506,15 +496,6 @@ static void DisplayModemState(uint8_t lineNumber, ModemState_t modemState)
   };
 
   DisplayLine(lineNumber, modem_states[modemState]);
-}
-
-static void DisplayDfuDots(uint8_t lineNumber, uint8_t numberOfDots)
-{
-  for(int i = 0; i < numberOfDots; i++)
-  {
-    Lcd.setCursor(i, 1);
-    Lcd.print(".");
-  }
 }
 
 static void ScreenIterate(void)
