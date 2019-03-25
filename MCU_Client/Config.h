@@ -61,7 +61,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define BUTTON_DEBOUNCE_TIME_MS     20      /**< Defines buttons debounce time in milliseconds. */
 #define ENCODER_DEBOUNCE_TIME_US    300     /**< Defines encoder debounce time in microseconds. */
-#define ATTENTION_TIME_US           500000  /**< Defines attention state change time in microseconds. */
+#define ATTENTION_TIME_MS           500     /**< Defines attention state change time in milliseconds. */
 #define DATA_VALIDITY_PERIOD_MS     3000    /**< Defines sensor data validity period. */
 
 #define LOG_INFO_ENABLE             0   /**< Enables INFO level logs */

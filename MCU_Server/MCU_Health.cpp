@@ -54,13 +54,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * STATIC VARIABLES                         *
  ********************************************/
 
-static volatile bool Fault           = false;                    /**< Implies if Fault button has been pushed */
-static volatile bool Connection      = false;                    /**< Implies if Connection button has been pushed */
-static bool          FaultState      = false;                    /**< Holds Fault state. True if fault is set and false if fault is cleared */
-static bool          ConnectionState = true;                     /**< Holds Connection state. True if UART connection is up and false if it is down */
-static uint8_t       HealthServerIdx = INSTANCE_INDEX_UNKNOWN;   /**  Index of registered Health Server model */
-static uint32_t      TestTimeLeftUS  = 0;                        /**  Time left to finish test.*/
-static uint8_t       TestStartPayload[TEST_MSG_LEN];             /**  Current test payload.*/
+static volatile bool Fault              = false;                    /**< Implies if Fault button has been pushed */
+static volatile bool Connection         = false;                    /**< Implies if Connection button has been pushed */
+static bool          FaultState         = false;                    /**< Holds Fault state. True if fault is set and false if fault is cleared */
+static bool          ConnectionState    = true;                     /**< Holds Connection state. True if UART connection is up and false if it is down */
+static uint8_t       HealthServerIdx    = INSTANCE_INDEX_UNKNOWN;   /**  Index of registered Health Server model */
+static bool          TestStarted        = false;                    /**  True, if test is started. */
+static uint32_t      TestStartTimestamp = 0;                        /**  Time left to finish test.*/
+static uint8_t       TestStartPayload[TEST_MSG_LEN];                /**  Current test payload.*/
 
 /********************************************
  * LOCAL FUNCTION PROTOTYPES                *
@@ -149,25 +150,13 @@ void ProcessStartTest(uint8_t * p_payload, uint8_t len)
   UART_SendTestStartResponse(NULL, 0);
   digitalWrite(PIN_LED_STATUS, true);
   memcpy(TestStartPayload, p_payload, len);
-  TestTimeLeftUS = TEST_TIME_US;
-}
-
-void IndicateHealth(void)
-{
-  if (IsTestInProgress())
-  {
-    TestTimeLeftUS -= TIMER_THREE_PERIOD;
-    if (TestTimeLeftUS == 0)
-    {
-      digitalWrite(PIN_LED_STATUS, false);
-      UART_SendTestFinishedRequest(TestStartPayload, TEST_MSG_LEN);
-    }
-  }
+  TestStarted        = true;
+  TestStartTimestamp = millis();
 }
 
 bool IsTestInProgress(void)
 {
-  return TestTimeLeftUS > 0;
+  return TestStarted;
 }
 
 void SetupHealth(void)
@@ -218,6 +207,18 @@ void LoopHealth(void)
     else
     {
       UART_DisablePings();
+    }
+  }
+
+  if (IsTestInProgress())
+  {
+    uint32_t timestamp = millis();
+    uint32_t duration  = timestamp - TestStartTimestamp;
+    if (duration >= TEST_TIME_MS)
+    {
+      TestStarted = false;
+      digitalWrite(PIN_LED_STATUS, false);
+      UART_SendTestFinishedRequest(TestStartPayload, TEST_MSG_LEN);
     }
   }
 }

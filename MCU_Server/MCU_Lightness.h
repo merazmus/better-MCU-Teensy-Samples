@@ -97,6 +97,11 @@ void LoopLightnessServer(void);
 void EnableStartupSequence(void);
 
 /*
+ *  Synchronize Lightness with Modem
+ */
+void SynchronizeLightness(void);
+
+/*
  *  Indicate attention using lightness output
  *
  *  @param attention_state     Attention state

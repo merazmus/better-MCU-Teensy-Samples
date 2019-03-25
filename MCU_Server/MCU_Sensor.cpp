@@ -49,6 +49,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * STATIC VARIABLES                         *
  ********************************************/
 
+static bool              IsEnabled                = false;
 static volatile uint32_t PirTimestamp             = 0;
 static uint8_t           SensorServerPirIdx       = INSTANCE_INDEX_UNKNOWN;
 static uint8_t           SensorServerAlsIdx       = INSTANCE_INDEX_UNKNOWN;
@@ -165,10 +166,12 @@ void SetupSensorServer(void)
   pinMode(PIN_PIR, INPUT);
 
   attachInterrupt(digitalPinToInterrupt(PIN_PIR), InterruptPIR, RISING);
+  IsEnabled = true;
 }
 
 void LoopSensorSever(void)
 {
+  if (!IsEnabled) return;
   static unsigned long timestamp = 0;
 
   if (timestamp + SENSOR_UPDATE_INTV < millis())

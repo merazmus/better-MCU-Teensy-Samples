@@ -1,5 +1,5 @@
 /*
-Copyright © 2017 Silvair Sp. z o.o. All Rights Reserved.
+Copyright © 2019 Silvair Sp. z o.o. All Rights Reserved.
  
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,8 +19,8 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef MCU_HEALTH_H
-#define MCU_HEALTH_H
+#ifndef MCU_ATTENTION_H
+#define MCU_ATTENTION_H
 
 /********************************************
  * INCLUDES                                 *
@@ -32,36 +32,23 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * EXPORTED #define CONSTANTS AND MACROS    *
  ********************************************/
 
-/** Silvair Mesh Model Company Id */
-#define SILVAIR_ID                     0x0136u
-
 /********************************************
  * EXPORTED FUNCTIONS PROTOTYPES            *
  ********************************************/
 
 /*
- *  Check if there is test in progress.
+ * Setup Attention
  */
-bool IsTestInProgress(void);
+void SetupAttention(void);
 
 /*
- * Setup health hardware
+ * Attention main function, should be called in Arduino main loop
  */
-void SetupHealth(void);
+void LoopAttention(void);
 
 /*
- * Health main function, should be called in Arduino main loop
+ * Set attention state
  */
-void LoopHealth(void);
+void AttentionStateSet(bool state);
 
-/*
- * Set index of registered Health Server model
- */ 
-void SetHealthServerIdx(uint8_t idx);
-
-/*
- * Get index of registered Health Server model
- */ 
-uint8_t GetHealthServerIdx(void);
-
-#endif  // MCU_HEALTH_H
+#endif  // MCU_ATTENTION_H

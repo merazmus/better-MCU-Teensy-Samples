@@ -28,11 +28,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "MCU_Lightness.h"
 #include "MCU_Sensor.h"
 #include "MCU_DFU.h"
+#include "MCU_Attention.h"
 #include "Mesh.h"
 #include "UART.h"
 #include "SDM.h"
-#include <TimerOne.h>
-#include <TimerThree.h>
 #include <math.h>
 #include <string.h>
 
@@ -173,37 +172,16 @@ static const uint8_t health_registration[] = {
 };
 
 static ModemState_t ModemState = MODEM_STATE_UNKNOWN;
-static bool         AttentionState;
-static bool         AttentionLedValue;
 
 #if ENABLE_CTL==1 && ENABLE_LC==1
 #undef ENABLE_LC
 #define ENABLE_LC 0
 #endif
 
-#if ENABLE_CTL==0
-static bool CTLEnabled = false;
-#else
-static bool CTLEnabled = true;
-#endif
-
-#if ENABLE_LC==0
-static bool LCEnabled = false;
-#else
-static bool LCEnabled = true;
-#endif
-
-#if ENABLE_PIRALS==0
-static const bool PIRALSEnabled = false;
-#else
-static const bool PIRALSEnabled = true;
-#endif
-
-#if ENABLE_ENERGY==0
-static const bool ENERGYEnabled = false;
-#else
-static const bool ENERGYEnabled = true;
-#endif
+static bool       CTLEnabled    = (ENABLE_CTL != 0);
+static bool       LCEnabled     = (ENABLE_LC != 0);
+static const bool PIRALSEnabled = (ENABLE_PIRALS != 0);
+static const bool ENERGYEnabled = (ENABLE_ENERGY != 0);
 
 /********************************************
  * LOCAL FUNCTIONS PROTOTYPES               *
@@ -213,11 +191,6 @@ static const bool ENERGYEnabled = true;
  *  Setup debug interface
  */
 void SetupDebug(void);
-
-/*
- *  Setup attention hardware
- */
-void SetupAttention(void);
 
 /*
  *  Process Init Device Event command
@@ -260,14 +233,6 @@ void ProcessEnterNode(uint8_t * p_payload, uint8_t len);
 void ProcessMeshCommand(uint8_t * p_payload, uint8_t len);
 
 /*
- *  Process Attention Event command
- *
- *  @param * p_payload   Command payload
- *  @param len           Payload len
- */
-void ProcessAttention(uint8_t * p_payload, uint8_t len);
-
-/*
  *  Process Error command
  *
  *  @param * p_payload   Command payload
@@ -294,16 +259,6 @@ void SendFirmwareVersionSetRequest(void);
 void ProcessFirmwareVersionSetResponse(void);
 
 /*
- *  Timer3 Tick
- */
-void Timer3Tick(void);
-
-/*
- *  Indicate attention
- */
-void IndicateAttention(void);
-
-/*
  *  Main Arduino setup
  */
 void setup(void);
@@ -324,19 +279,11 @@ void SetupDebug(void)
   delay(1000);
 }
 
-void SetupAttention(void)
-{
-  pinMode(PIN_LED_STATUS, OUTPUT);
-
-  Timer3.initialize(TIMER_THREE_PERIOD);
-  Timer3.attachInterrupt(Timer3Tick);
-}
-
 void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
 {
   INFO("Init Device State.\n");
-  ModemState     = MODEM_STATE_INIT_DEVICE;
-  AttentionState = false;
+  ModemState = MODEM_STATE_INIT_DEVICE;
+  AttentionStateSet(false);
 
   if(!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_CTL_SERVER) && CTLEnabled)
   {
@@ -417,16 +364,15 @@ void ProcessEnterDevice(uint8_t * p_payload, uint8_t len)
 {
   INFO("Device State.\n");
 
-  if(LCEnabled || CTLEnabled) EnableStartupSequence();
-
+  EnableStartupSequence();
   ModemState = MODEM_STATE_DEVICE;
 }
 
 void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
 {
   INFO("Init Node State.\n");
-  ModemState     = MODEM_STATE_INIT_NODE;
-  AttentionState = false;
+  ModemState = MODEM_STATE_INIT_NODE;
+  AttentionStateSet(false);
 
   SetLightnessServerIdx(INSTANCE_INDEX_UNKNOWN);
   SetSensorServerPIRIdx(INSTANCE_INDEX_UNKNOWN);
@@ -529,44 +475,17 @@ void ProcessEnterNode(uint8_t * p_payload, uint8_t len)
   INFO("Node State.\n");
   ModemState = MODEM_STATE_NODE;
 
-  if(LCEnabled || CTLEnabled) Mesh_SendLightLightnessGet(GetLightnessServerIdx());
+  SynchronizeLightness();
 }
 
 void ProcessMeshCommand(uint8_t * p_payload, uint8_t len)
 {
   Mesh_ProcessMeshCommand(p_payload, len);
 }
-
-void ProcessAttention(uint8_t * p_payload, uint8_t len)
-{
-  INFO("Attention State %d\n\n.", p_payload[0]);
-  AttentionState = (p_payload[0] == 0x01);
-  if (!AttentionState)
-  {
-    AttentionLedValue = false;
-    digitalWrite(PIN_LED_STATUS, AttentionLedValue);
-  }
-}
  
 void ProcessError(uint8_t * p_payload, uint8_t len)
 {
   INFO("Error %d\n\n.", p_payload[0]);
-}
-
-void Timer3Tick(void)
-{
-  IndicateAttention();
-  IndicateHealth();
-}
-
-void IndicateAttention(void)
-{
-  if(!IsTestInProgress())
-  {
-    AttentionLedValue = AttentionState ? !AttentionLedValue : false;
-    digitalWrite(PIN_LED_STATUS, AttentionLedValue);
-    if(LCEnabled || CTLEnabled) IndicateAttentionLightness(AttentionState, AttentionLedValue);
-  }
 }
 
 void SendFirmwareVersionSetRequest(void)
@@ -604,11 +523,16 @@ void loop(void)
   if (!MCU_DFU_IsInProgress())
   {
     LoopHealth();
+    if (!IsTestInProgress())
+    {
+      // Health and Attention shares Status LED
+      LoopAttention();
+    }
 
-    if(LCEnabled || CTLEnabled) LoopLightnessServer();
-    if(ENERGYEnabled)           LoopSDM();
+    LoopLightnessServer();
+    LoopSDM();
 
-    if (MODEM_STATE_NODE == ModemState && (PIRALSEnabled || ENERGYEnabled))
+    if (MODEM_STATE_NODE == ModemState)
     {
       LoopSensorSever();
     }

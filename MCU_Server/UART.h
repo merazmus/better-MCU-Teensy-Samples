@@ -273,7 +273,6 @@ extern void ProcessError(uint8_t * p_payload, uint8_t len);
 extern void ProcessStartTest(uint8_t * p_payload, uint8_t len);
 
 /*
-<<<<<<< HEAD
  *  Process Dfu Init Request command
  *
  *  @param * p_payload   Command payload

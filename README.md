@@ -5,8 +5,8 @@
 - Newliquidcrystal 1.3.5 https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/Newliquidcrystal_1.3.5.zip
 
 ## Step by step setup instuctions:
-- Install Arduino IDE 1.8.5
-- Install Teensyduino plugin 1.40
+- Install Arduino IDE 1.8.8
+- Install Teensyduino plugin 1.45
 - Open sketch file in Arduino IDE
 - Download Newliquidcrystal
 - Add Newliquidcrystal library: Sketch -> Include library -> Add .zip library

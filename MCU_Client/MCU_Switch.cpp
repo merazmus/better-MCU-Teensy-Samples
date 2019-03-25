@@ -53,7 +53,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define LIGHTNESS_MIN                       0u             /**< Defines lower range of light lightness. */
 #define LIGHTNESS_MAX                       UINT16_MAX     /**< Defines upper range of light lightness. */
 #define LIGHTNESS_MIN_CHANGE                0x500u         /**< Defines the lowest reported changed. */
-#define LIGHTNESS_INTVL_MS                  100u           /**< Defines the shortest interval between two LightLightness messages. */
+#define LIGHTNESS_INTVL_MS                  50u            /**< Defines the shortest interval between two LightLightness messages. */
 
 /**
  * On Off communication properties
@@ -80,7 +80,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
  * Default communication properties
  */
-#define LIGHT_LIGHTNESS_NUMBER_OF_REPEATS   2              /**< Defines default number of repeats while sending mesh message request */
+#define LIGHT_LIGHTNESS_NUMBER_OF_REPEATS   0              /**< Defines default number of repeats while sending mesh message request */
 #define LIGHT_LIGHTNESS_TRANSITION_TIME_MS  100            /**< Defines default transition time */
 #define LIGHT_LIGHTNESS_DELAY_TIME_MS       0              /**< Defines default delay time */
 

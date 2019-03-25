@@ -28,9 +28,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "MCU_Sensor.h"
 #include "MCU_Switch.h"
 #include "MCU_DFU.h"
+#include "MCU_Attention.h"
 #include "Mesh.h"
 #include "UART.h"
-#include <TimerThree.h>
 #include <limits.h>
 #include <string.h>
 #include "MCU_Definitions.h"
@@ -47,8 +47,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * STATIC VARIABLES                         *
  ********************************************/
 
-static bool         AttentionState    = false;
-static bool         AttentionLedValue = false;
 static ModemState_t ModemState        = MODEM_STATE_UNKNOWN;
 static bool         LastDfuInProgress = false;
 
@@ -60,11 +58,6 @@ static bool         LastDfuInProgress = false;
  *  Setup debug interface
  */
 void SetupDebug(void);
-
-/*
- *  Setup attention hardware
- */
-void SetupAttention(void);
 
 /*
  *  Process Init Device Event command
@@ -107,14 +100,6 @@ void ProcessEnterNode(uint8_t * p_payload, uint8_t len);
 void ProcessMeshCommand(uint8_t * p_payload, uint8_t len);
 
 /*
- *  Process Attention Event command
- *
- *  @param * p_payload   Command payload
- *  @param len           Payload len
- */
-void ProcessAttention(uint8_t * p_payload, uint8_t len);
-
-/*
  *  Process Error command
  *
  *  @param * p_payload   Command payload
@@ -131,11 +116,6 @@ void SendFirmwareVersionSetRequest(void);
  *  Process FactoryResetEvent
  */
 void ProcessFactoryResetEvent(void);
-
-/*
- *  Indicate attention
- */
-void IndicateAttention(void);
 
 /*
  *  Print current UART Modem state on LCD
@@ -173,20 +153,12 @@ void SetupDebug(void)
   delay(1000);
 }
 
-void SetupAttention(void)
-{
-  pinMode(PIN_LED_STATUS, OUTPUT);
-
-  Timer3.initialize(ATTENTION_TIME_US);
-  Timer3.attachInterrupt(IndicateAttention);
-}
-
 void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
 {
   INFO("Init Device State.\n");
   ModemState = MODEM_STATE_INIT_DEVICE;
   LCD_UpdateModemState(ModemState);
-  AttentionState = false;
+  AttentionStateSet(false);
 
   SetInstanceIdxSwitch1(INSTANCE_INDEX_UNKNOWN);
   SetInstanceIdxSwitch2(INSTANCE_INDEX_UNKNOWN);
@@ -233,7 +205,7 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
   INFO("Init Node State.\n");
   ModemState = MODEM_STATE_INIT_NODE;
   LCD_UpdateModemState(ModemState);
-  AttentionState = false;
+  AttentionStateSet(false);
 
   SetInstanceIdxSwitch1(INSTANCE_INDEX_UNKNOWN);
   SetInstanceIdxSwitch2(INSTANCE_INDEX_UNKNOWN);
@@ -304,12 +276,6 @@ void ProcessMeshCommand(uint8_t * p_payload, uint8_t len)
   Mesh_ProcessMeshCommand(p_payload, len);
 }
 
-void ProcessAttention(uint8_t * p_payload, uint8_t len)
-{
-  INFO("Attention State %d\n\n.", p_payload[0]);
-  AttentionState = (p_payload[0] == 0x01);
-}
-
 void ProcessError(uint8_t * p_payload, uint8_t len)
 {
   INFO("Error %d\n\n.", p_payload[0]);
@@ -319,12 +285,6 @@ void ProcessModemFirmwareVersion(uint8_t * p_payload, uint8_t len)
 {
   INFO("Process Modem Firmware Version\n");
   LCD_UpdateModemFwVersion((char*)p_payload, len);
-}
-
-void IndicateAttention(void)
-{
-  AttentionLedValue = AttentionState ? !AttentionLedValue : false;
-  digitalWrite(PIN_LED_STATUS, AttentionLedValue);
 }
 
 bool IsDfuStateChanged(void)
@@ -368,6 +328,7 @@ void loop()
 {
   Mesh_Loop();
   LCD_Loop();
+  LoopAttention();
   UART_ProcessIncomingCommand();
 
   switch (ModemState)

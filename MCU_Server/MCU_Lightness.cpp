@@ -59,7 +59,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define DEVICE_STARTUP_SEQ_STAGE_4_LIGHTNESS    0x0000
 #define DEVICE_STARTUP_SEQ_STAGE_5_LIGHTNESS    0x7FFF
 #define DEVICE_STARTUP_SEQ_STAGE_6_LIGHTNESS    0x0000
-#define DEVICE_STARTUP_SEQ_STAGE_OFF_LIGHTNESS  0x7FFF
+#define DEVICE_STARTUP_SEQ_STAGE_OFF_LIGHTNESS  0xFFFF
 
 /********************************************
  * LOCAL TYPES DEFINITIONS                  *
@@ -117,11 +117,12 @@ static void SetLightnessOutput(uint16_t val);
 /*
  *  Calculate new transition
  *
- *  @param val              Target value
+ *  @param current          Current value
+ *  @param target           Target value
  *  @param transition_time  Transition time
  *  @param p_transition     Pointer to transition
  */
-static void UpdateTransition(uint16_t val, uint32_t transition_time, Transition * p_transition);
+static void UpdateTransition(uint16_t current, uint16_t target, uint32_t transition_time, Transition * p_transition);
 
 /********************************************
  * STATIC VARIABLES                         *
@@ -141,10 +142,11 @@ static Transition Temperature = {
   .transition_time = 0,
 };
 
-static bool                    CTLSupport                      = false;
-static uint8_t                 LightLightnessServerIdx         = INSTANCE_INDEX_UNKNOWN;
-static volatile bool           AttentionLedState               = false;
-static bool                    UnprovisionedSequenceEnableFlag = false;
+static bool          IsEnabled                       = false;
+static bool          CTLSupport                      = false;
+static uint8_t       LightLightnessServerIdx         = INSTANCE_INDEX_UNKNOWN;
+static volatile bool AttentionLedState               = false;
+static bool          UnprovisionedSequenceEnableFlag = false;
 
 /********************************************
  * LOCAL FUNCTIONS DEFINITIONS              *
@@ -267,11 +269,13 @@ static void PerformStartupSequenceIfNeeded(void)
 
 void SetLightnessServerIdx(uint8_t idx)
 {
+  if (!IsEnabled) return;
   LightLightnessServerIdx = idx;
 }
 
 void SetLightCTLSupport(bool support)
 {
+  if (!IsEnabled) return;
   CTLSupport = support;
 }
 
@@ -282,6 +286,8 @@ uint8_t GetLightnessServerIdx(void)
 
 void IndicateAttentionLightness(bool attention_state, bool led_state)
 {
+  if (!IsEnabled) return;
+
   if (attention_state)
   {
     uint16_t led_lightness = led_state ? ATTENTION_LIGHTNESS_ON : ATTENTION_LIGHTNESS_OFF;
@@ -292,6 +298,8 @@ void IndicateAttentionLightness(bool attention_state, bool led_state)
 
 void ProcessTargetLightness(uint16_t current, uint16_t target, uint32_t transition_time)
 {
+  if (!IsEnabled) return;
+
   INFO("Lightness: %d -> %d, transition_time %d\n", current, target, transition_time);
 
   UpdateTransition(current, target, transition_time, &Light);
@@ -299,6 +307,8 @@ void ProcessTargetLightness(uint16_t current, uint16_t target, uint32_t transiti
 
 void ProcessTargetLightnessTemp(uint16_t current, uint16_t target, uint32_t transition_time)
 {
+  if (!IsEnabled) return;
+
   INFO("Temperature: %d-> %d, transition_time %d\n", current, target, transition_time);
 
   UpdateTransition(current, target, transition_time, &Temperature);
@@ -306,6 +316,7 @@ void ProcessTargetLightnessTemp(uint16_t current, uint16_t target, uint32_t tran
 
 void SetupLightnessServer(void)
 {
+  IsEnabled = true;
   pinMode(PIN_PWM_WARM, OUTPUT);
   pinMode(PIN_PWM_COLD, OUTPUT);
   analogWriteResolution(PWM_RESOLUTION);
@@ -315,10 +326,21 @@ void SetupLightnessServer(void)
 
 void LoopLightnessServer(void)
 {
+  if (!IsEnabled) return;
+
   PerformStartupSequenceIfNeeded();
 }
 
 void EnableStartupSequence(void)
 {
+  if (!IsEnabled) return;
+
   UnprovisionedSequenceEnableFlag = true;
+}
+
+void SynchronizeLightness(void)
+{
+  if (!IsEnabled) return;
+
+  Mesh_SendLightLightnessGet(GetLightnessServerIdx());
 }

@@ -95,6 +95,7 @@ static const uint16_t holding_query_table[] = {
 };
 static const size_t holding_query_entries = sizeof(holding_query_table) / sizeof(*holding_query_table);
 
+static bool        is_enabled           = false;
 static uint8_t     slave_address        = SDM_DEFAULT_ADDRESS;
 static SDM_State_T state                = {0};
 static uint16_t    waiting_for_query    = SDM_NO_QUERY;
@@ -169,6 +170,8 @@ static void SDM_ProcessUint8InsideFloatData(size_t data_len, uint16_t * p_data, 
 
 void LoopSDM(void)
 {
+  if (!is_enabled) return;
+
   if(waiting_for_query != SDM_NO_QUERY)
   {
     if(last_query_timestamp + SDM_QUERY_TIMEOUT <= millis())
@@ -227,6 +230,7 @@ void SetupSDM(void)
   MODBUS_INTERFACE.transmitterEnable(2);
   // Waits for debug interface initialization.
   delay(1000);
+  is_enabled = true;
 }
 
 const SDM_State_T * SDM_GetState(void)
