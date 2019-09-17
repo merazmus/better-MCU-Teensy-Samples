@@ -22,35 +22,26 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef UART_H_
 #define UART_H_
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
-#include "stdint.h"
 #include "Config.h"
+#include "stdint.h"
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
 
 /**< Defines maximum data length in frame */
 #define MAX_PAYLOAD_SIZE 127
 
 #if LOG_INFO_ENABLE == 1
-  #define INFO(f_, ...) DEBUG_INTERFACE.printf((f_), ##__VA_ARGS__)
+#define INFO(f_, ...) DEBUG_INTERFACE.printf((f_), ##__VA_ARGS__)
 #else
-  #define INFO(f_, ...)
+#define INFO(f_, ...)
 #endif
 
 #if LOG_DEBUG_ENABLE == 1
-  #define DEBUG(f_, ...) DEBUG_INTERFACE.printf((f_), ##__VA_ARGS__)
+#define DEBUG(f_, ...) DEBUG_INTERFACE.printf((f_), ##__VA_ARGS__)
 #else
-  #define DEBUG(f_, ...)
+#define DEBUG(f_, ...)
 #endif
 
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  *  Setup UART hardware
@@ -88,7 +79,7 @@ void UART_SendSoftwareResetRequest(void);
  *  @param * model_id   Pointer to model ids list
  *  @param len          Model ids list length
  */
-void UART_SendCreateInstancesRequest(uint8_t * model_id, uint8_t len);
+void UART_SendCreateInstancesRequest(uint8_t *model_id, uint8_t len);
 
 /*
  *  Send Mesh Message Request command
@@ -96,7 +87,7 @@ void UART_SendCreateInstancesRequest(uint8_t * model_id, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendMeshMessageRequest(uint8_t * p_payload, uint8_t len);
+void UART_SendMeshMessageRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Sensor Update Request command
@@ -104,7 +95,7 @@ void UART_SendMeshMessageRequest(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendSensorUpdateRequest(uint8_t * p_payload, uint8_t len);
+void UART_SendSensorUpdateRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Start Node Request command
@@ -117,7 +108,7 @@ void UART_StartNodeRequest(void);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendSetFaultRequest(uint8_t * p_payload, uint8_t len);
+void UART_SendSetFaultRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Clear Fault Request command
@@ -125,7 +116,7 @@ void UART_SendSetFaultRequest(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendClearFaultRequest(uint8_t * p_payload, uint8_t len);
+void UART_SendClearFaultRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Test Start Response command
@@ -133,7 +124,7 @@ void UART_SendClearFaultRequest(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendTestStartResponse(uint8_t * p_payload, uint8_t len);
+void UART_SendTestStartResponse(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Test Finished Request command
@@ -141,7 +132,7 @@ void UART_SendTestStartResponse(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendTestFinishedRequest(uint8_t * p_payload, uint8_t len);
+void UART_SendTestFinishedRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Dfu Init Response command
@@ -149,7 +140,7 @@ void UART_SendTestFinishedRequest(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendDfuInitResponse(uint8_t * p_payload, uint8_t len);
+void UART_SendDfuInitResponse(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Dfu Status Response command
@@ -157,7 +148,7 @@ void UART_SendDfuInitResponse(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendDfuStatusResponse(uint8_t * p_payload, uint8_t len);
+void UART_SendDfuStatusResponse(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Dfu Page Create command
@@ -165,7 +156,7 @@ void UART_SendDfuStatusResponse(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendDfuPageCreateResponse(uint8_t * p_payload, uint8_t len);
+void UART_SendDfuPageCreateResponse(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Dfu Page Store Response command
@@ -173,7 +164,7 @@ void UART_SendDfuPageCreateResponse(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendDfuPageStoreResponse(uint8_t * p_payload, uint8_t len);
+void UART_SendDfuPageStoreResponse(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Dfu State Check Request command
@@ -181,7 +172,7 @@ void UART_SendDfuPageStoreResponse(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendDfuStateCheckRequest(uint8_t * p_payload, uint8_t len);
+void UART_SendDfuStateCheckRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Dfu Cancel Request command
@@ -189,7 +180,7 @@ void UART_SendDfuStateCheckRequest(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void UART_SendDfuCancelRequest(uint8_t * p_payload, uint8_t len);
+void UART_SendDfuCancelRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Flush UART
@@ -202,7 +193,7 @@ void UART_Flush();
  *  @param * p_payload   Command payload
  *  @param len           Payload len
 */
-void UART_SendFirmwareVersionSetRequest(uint8_t * p_payload, uint8_t len);
+void UART_SendFirmwareVersionSetRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Receive and process incoming UART command
@@ -215,7 +206,7 @@ void UART_ProcessIncomingCommand(void);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len);
+extern void ProcessEnterInitDevice(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Create Instances Response command
@@ -223,7 +214,7 @@ extern void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessEnterDevice(uint8_t * p_payload, uint8_t len);
+extern void ProcessEnterDevice(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Init Node Event command
@@ -231,14 +222,14 @@ extern void ProcessEnterDevice(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len);
+extern void ProcessEnterInitNode(uint8_t *p_payload, uint8_t len);
 /*
  *  Process Start Node Response command
  *
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessEnterNode(uint8_t * p_payload, uint8_t len);
+extern void ProcessEnterNode(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Mesh Message Request command
@@ -246,7 +237,7 @@ extern void ProcessEnterNode(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessMeshCommand(uint8_t * p_payload, uint8_t len);
+extern void ProcessMeshCommand(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Attention Event command
@@ -254,7 +245,7 @@ extern void ProcessMeshCommand(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessAttention(uint8_t * p_payload, uint8_t len);
+extern void ProcessAttention(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Error command
@@ -262,7 +253,7 @@ extern void ProcessAttention(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessError(uint8_t * p_payload, uint8_t len);
+extern void ProcessError(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Start Test command
@@ -270,7 +261,7 @@ extern void ProcessError(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessStartTest(uint8_t * p_payload, uint8_t len);
+extern void ProcessStartTest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Dfu Init Request command
@@ -278,7 +269,7 @@ extern void ProcessStartTest(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessDfuInitRequest(uint8_t * p_payload, uint8_t len);
+extern void ProcessDfuInitRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Dfu Status Request command
@@ -286,7 +277,7 @@ extern void ProcessDfuInitRequest(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessDfuStatusRequest(uint8_t * p_payload, uint8_t len);
+extern void ProcessDfuStatusRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Dfu Page Create Request command
@@ -294,7 +285,7 @@ extern void ProcessDfuStatusRequest(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessDfuPageCreateRequest(uint8_t * p_payload, uint8_t len);
+extern void ProcessDfuPageCreateRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Dfu Write Data Event command
@@ -302,7 +293,7 @@ extern void ProcessDfuPageCreateRequest(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessDfuWriteDataEvent(uint8_t * p_payload, uint8_t len);
+extern void ProcessDfuWriteDataEvent(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Dfu Pahe Store Request command
@@ -310,7 +301,7 @@ extern void ProcessDfuWriteDataEvent(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessDfuPageStoreRequest(uint8_t * p_payload, uint8_t len);
+extern void ProcessDfuPageStoreRequest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Dfu State Check Response command
@@ -318,7 +309,7 @@ extern void ProcessDfuPageStoreRequest(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessDfuStateCheckResponse(uint8_t * p_payload, uint8_t len);
+extern void ProcessDfuStateCheckResponse(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Dfu Cancel Response command
@@ -326,11 +317,11 @@ extern void ProcessDfuStateCheckResponse(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-extern void ProcessDfuCancelResponse(uint8_t * p_payload, uint8_t len);
+extern void ProcessDfuCancelResponse(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Firmware Version set response
  */
 extern void ProcessFirmwareVersionSetResponse(void);
 
-#endif  // UART_H_
+#endif    // UART_H_

@@ -22,69 +22,65 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
- 
+
 #include "Arduino.h"
 
-/********************************************
- * LOCAL #define CONSTANTS AND MACROS       *
- ********************************************/
 
-#define ENABLE_LC                   1   /**< Enable LC support */
-#define ENABLE_CTL                  0   /**< Enable CTL support */
-#define ENABLE_PIRALS               1   /**< Enable PIR and ALS support */
-#define ENABLE_ENERGY               1   /**< Enable energy monitoring support */
-#define ENABLE_1_10_V               0   /**< Define for calculate lightness for 0-10 V (value 0) or 1-10 V (value 1) */
+#define ENABLE_LC 1     /**< Enable LC support */
+#define ENABLE_CTL 0    /**< Enable CTL support */
+#define ENABLE_PIRALS 1 /**< Enable PIR and ALS support */
+#define ENABLE_ENERGY 1 /**< Enable energy monitoring support */
+#define ENABLE_1_10_V 0 /**< Define for calculate lightness for 0-10 V (value 0) or 1-10 V (value 1) */
 
-#define BUILD_NUMBER                "0000"                   /**< Defines firmware build number. */
-#define DFU_VALIDATION_STRING       "server"                 /**< Defines string to be expected in app data */
+#define BUILD_NUMBER "0000"            /**< Defines firmware build number. */
+#define DFU_VALIDATION_STRING "server" /**< Defines string to be expected in app data */
 
-#define INSTANCE_INDEX_UNKNOWN      UINT8_MAX  /**< Defines unknown instance index value */
-#define ANALOG_MIN                  0          /**< Defines lower range of analog measurements. */
-#define ANALOG_MAX                  1023       /**< Defines uppper range of analog measurements. */
-#define ANALOG_REFERENCE_VOLTAGE_MV 3300       /**< Defines ADC reference voltage in millivolts */
-#define ATTENTION_TIME_MS           500        /**< Defines attention state change time in milliseconds. */
-#define TEST_TIME_MS                1500       /**< Defines fake test duration in milliseconds. */
+#define INSTANCE_INDEX_UNKNOWN UINT8_MAX /**< Defines unknown instance index value */
+#define ANALOG_MIN 0                     /**< Defines lower range of analog measurements. */
+#define ANALOG_MAX 1023                  /**< Defines uppper range of analog measurements. */
+#define ANALOG_REFERENCE_VOLTAGE_MV 3300 /**< Defines ADC reference voltage in millivolts */
+#define ATTENTION_TIME_MS 500            /**< Defines attention state change time in milliseconds. */
+#define TEST_TIME_MS 1500                /**< Defines fake test duration in milliseconds. */
 
-#define DEBUG_INTERFACE             (Serial)    /**< Defines serial port to print debug messages */
-#define DEBUG_INTERFACE_BAUDRATE    115200      /**< Defines baudrate of debug interface */
-#define UART_INTERFACE              (Serial2)   /**< Defines serial port to communicate with modem */
-#define UART_INTERFACE_BAUDRATE     57600       /**< Defines baudrate of modem interface */
-#define MODBUS_INTERFACE            (Serial3)   /**< Defines serial port to communicate with modem */
-#define MODBUS_INTERFACE_BAUDRATE   2400        /**< Defines baudrate of modem interface */
+#define DEBUG_INTERFACE (Serial)        /**< Defines serial port to print debug messages */
+#define DEBUG_INTERFACE_BAUDRATE 115200 /**< Defines baudrate of debug interface */
+#define UART_INTERFACE (Serial2)        /**< Defines serial port to communicate with modem */
+#define UART_INTERFACE_BAUDRATE 57600   /**< Defines baudrate of modem interface */
+#define MODBUS_INTERFACE (Serial3)      /**< Defines serial port to communicate with modem */
+#define MODBUS_INTERFACE_BAUDRATE 2400  /**< Defines baudrate of modem interface */
 
-#define PIN_LED_1                   11  /**< Defines led 1 pin. */
-#define PIN_LED_2                   12  /**< Defines led 2 pin. */
-#define PIN_LED_STATUS              13  /**< Defines status led pin. */
-#define PIN_PWM_WARM                23  /**< Defines pwm pin. */
-#define PIN_PWM_COLD                16  /**< Defines pwm pin. */
-#define PIN_SW_1                    22  /**< Defines switch 1 pin. */
-#define PIN_SW_2                    21  /**< Defines switch 2 pin. */
-#define PIN_SW_3                    20  /**< Defines switch 3 pin. */
-#define PIN_SW_4                    15  /**< Defines switch 4 pin. */
-#define PIN_ENCODER_SW              14  /**< Defines encoder switch pin. */
-#define PIN_ENCODER_A               6   /**< Defines encoder A pin. */
-#define PIN_ENCODER_B               4   /**< Defines encoder B pin. */
-#define PIN_ANALOG                  9   /**< Defines analog measurement pin. */
+#define PIN_LED_1 11      /**< Defines led 1 pin. */
+#define PIN_LED_2 12      /**< Defines led 2 pin. */
+#define PIN_LED_STATUS 13 /**< Defines status led pin. */
+#define PIN_PWM_WARM 23   /**< Defines pwm pin. */
+#define PIN_PWM_COLD 16   /**< Defines pwm pin. */
+#define PIN_SW_1 22       /**< Defines switch 1 pin. */
+#define PIN_SW_2 21       /**< Defines switch 2 pin. */
+#define PIN_SW_3 20       /**< Defines switch 3 pin. */
+#define PIN_SW_4 15       /**< Defines switch 4 pin. */
+#define PIN_ENCODER_SW 14 /**< Defines encoder switch pin. */
+#define PIN_ENCODER_A 6   /**< Defines encoder A pin. */
+#define PIN_ENCODER_B 4   /**< Defines encoder B pin. */
+#define PIN_ANALOG 9      /**< Defines analog measurement pin. */
 
-#define BUTTON_DEBOUNCE_TIME_MS     20  /**< Defines buttons debounce time in milliseconds. */
+#define BUTTON_DEBOUNCE_TIME_MS 20 /**< Defines buttons debounce time in milliseconds. */
 
 #if ENABLE_PIRALS == 1
-#define PIR_REGISTRATION_ORDER         1   /**< Defines sensor servers registration order */
-#define ALS_REGISTRATION_ORDER         2   /**< Defines sensor servers registration order */
+#define PIR_REGISTRATION_ORDER 1 /**< Defines sensor servers registration order */
+#define ALS_REGISTRATION_ORDER 2 /**< Defines sensor servers registration order */
 #else
-#define PIR_REGISTRATION_ORDER         0   /**< Defines sensor servers registration order */
-#define ALS_REGISTRATION_ORDER         0   /**< Defines sensor servers registration order */
+#define PIR_REGISTRATION_ORDER 0 /**< Defines sensor servers registration order */
+#define ALS_REGISTRATION_ORDER 0 /**< Defines sensor servers registration order */
 #endif
 
-#define VOLT_CURR_REGISTRATION_ORDER   (ALS_REGISTRATION_ORDER + 1)         /**< Defines sensor servers registration order */
-#define POW_ENERGY_REGISTRATION_ORDER  (VOLT_CURR_REGISTRATION_ORDER + 1)   /**< Defines sensor servers registration order */
+#define VOLT_CURR_REGISTRATION_ORDER (ALS_REGISTRATION_ORDER + 1) /**< Defines sensor servers registration order */
+#define POW_ENERGY_REGISTRATION_ORDER \
+    (VOLT_CURR_REGISTRATION_ORDER + 1) /**< Defines sensor servers registration order */
 
-#define PWM_RESOLUTION              16  /**< Defines PWM resolution value */
+#define PWM_RESOLUTION 16 /**< Defines PWM resolution value */
 
-#define LOG_INFO_ENABLE             0   /**< Enables INFO level logs */
-#define LOG_DEBUG_ENABLE            0   /**< Enables DEBUG level logs Enabling this make DFU impossible, due to implementation of UART in Arduino. */
+#define LOG_INFO_ENABLE 0 /**< Enables INFO level logs */
+#define LOG_DEBUG_ENABLE \
+    0 /**< Enables DEBUG level logs Enabling this make DFU impossible, due to implementation of UART in Arduino. */
 
-#endif  // CONFIG_H_
+#endif    // CONFIG_H_

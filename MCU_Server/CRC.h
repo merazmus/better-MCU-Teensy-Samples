@@ -22,24 +22,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef CRC_H_
 #define CRC_H_
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
-#include <stdint.h>
 #include <inttypes.h>
 #include <stddef.h>
+#include <stdint.h>
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
 
-#define CRC16_INIT_VAL 0xFFFFu      /**< CRC16 init value */
-#define CRC32_INIT_VAL 0xFFFFFFFFu  /**< CRC32 init value */
+#define CRC16_INIT_VAL 0xFFFFu     /**< CRC16 init value */
+#define CRC32_INIT_VAL 0xFFFFFFFFu /**< CRC32 init value */
 
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  *  Calculate CRC16
@@ -49,7 +40,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *  @param init_val     CRC init val
  *  @return             Calculated CRC
  */
-uint16_t CalcCRC16(uint8_t * data, size_t len, uint16_t init_val);
+uint16_t CalcCRC16(uint8_t *data, size_t len, uint16_t init_val);
 
 /*
  *  Calculate CRC16 MODBUS
@@ -59,7 +50,7 @@ uint16_t CalcCRC16(uint8_t * data, size_t len, uint16_t init_val);
  *  @param init_val     CRC init val
  *  @return             Calculated CRC
  */
-uint16_t CalcCRC16_Modbus(uint8_t * data, size_t len, uint16_t init_val);
+uint16_t CalcCRC16_Modbus(uint8_t *data, size_t len, uint16_t init_val);
 
 /*
  *  Calculate CRC32
@@ -69,7 +60,7 @@ uint16_t CalcCRC16_Modbus(uint8_t * data, size_t len, uint16_t init_val);
  *  @param init_val     CRC init val
  *  @return             Calculated CRC
  */
-uint32_t CalcCRC32(uint8_t * data, size_t len, uint32_t init_val);
+uint32_t CalcCRC32(uint8_t *data, size_t len, uint32_t init_val);
 
 /*
  *  Calculate CRC32
@@ -78,6 +69,6 @@ uint32_t CalcCRC32(uint8_t * data, size_t len, uint32_t init_val);
  *  @param len          Data len
  *  @param * sha256     [out] calculated SHA256
  */
-void CalcSHA256(uint8_t * data, size_t len, uint8_t * sha256);
+void CalcSHA256(uint8_t *data, size_t len, uint8_t *sha256);
 
-#endif  // CRC_H_
+#endif    // CRC_H_

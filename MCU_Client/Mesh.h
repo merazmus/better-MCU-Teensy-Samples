@@ -22,30 +22,21 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MESH_H_
 #define MESH_H_
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
+#include "MCU_Sensor.h"
 #include "stddef.h"
 #include "stdint.h"
-#include "MCU_Sensor.h"
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
 
 /**
  * Supported Mesh Model IDs definitions
  */
-#define MESH_MODEL_ID_GENERIC_ONOFF_CLIENT      0x1001
-#define MESH_MODEL_ID_SENSOR_CLIENT             0x1102
-#define MESH_MODEL_ID_GENERIC_LEVEL_CLIENT      0x1003
-#define MESH_MODEL_ID_LIGHT_LIGHTNESS_CLIENT    0x1302
-#define MESH_MODEL_ID_LIGHT_LC_CLIENT           0x1311
+#define MESH_MODEL_ID_GENERIC_ONOFF_CLIENT 0x1001
+#define MESH_MODEL_ID_SENSOR_CLIENT 0x1102
+#define MESH_MODEL_ID_GENERIC_LEVEL_CLIENT 0x1003
+#define MESH_MODEL_ID_LIGHT_LIGHTNESS_CLIENT 0x1302
+#define MESH_MODEL_ID_LIGHT_LC_CLIENT 0x1311
 
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  *  Whis function should be called in Arduino main loop
@@ -60,7 +51,7 @@ void Mesh_Loop(void);
  *  @param expected_model_id    Expected model ID
  *  @return                     True if found, false otherwise
  */
-bool Mesh_IsModelAvailable(uint8_t * p_payload, uint8_t len, uint16_t expected_model_id);
+bool Mesh_IsModelAvailable(uint8_t *p_payload, uint8_t len, uint16_t expected_model_id);
 
 /*
  *  Process Mesh Message Request command
@@ -68,7 +59,7 @@ bool Mesh_IsModelAvailable(uint8_t * p_payload, uint8_t len, uint16_t expected_m
  *  @param p_payload    Pointer to p_payload
  *  @param len          Payload len
  */
-void Mesh_ProcessMeshCommand(uint8_t * p_payload, size_t len);
+void Mesh_ProcessMeshCommand(uint8_t *p_payload, size_t len);
 
 /*
  *  Send Generic OnOff Set Unacknowledged message with repeats.
@@ -169,4 +160,4 @@ extern void ProcessPresentInputVoltage(uint16_t src_addr, SensorValue_T sensor_v
  */
 extern void ProcessTotalDeviceEnergyUse(uint16_t src_addr, SensorValue_T sensor_value);
 
-#endif  // MESH_H_
+#endif    // MESH_H_

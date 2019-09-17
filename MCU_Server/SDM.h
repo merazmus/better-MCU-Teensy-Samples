@@ -22,91 +22,80 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef SDM_H_
 #define SDM_H_
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
 
 /**
  * SDM configuration values definitons
  */
-#define SDM_BAUD_2400  0
-#define SDM_BAUD_4800  1
-#define SDM_BAUD_9600  2
-#define SDM_BAUD_1200  5
+#define SDM_BAUD_2400 0
+#define SDM_BAUD_4800 1
+#define SDM_BAUD_9600 2
+#define SDM_BAUD_1200 5
 
-#define SDM_STOP_1_PARITY_NO    0
-#define SDM_STOP_1_PARITY_EVEN  1
-#define SDM_STOP_1_PARITY_ODD   2
-#define SDM_STOP_2_PARITY_NO    3
+#define SDM_STOP_1_PARITY_NO 0
+#define SDM_STOP_1_PARITY_EVEN 1
+#define SDM_STOP_1_PARITY_ODD 2
+#define SDM_STOP_2_PARITY_NO 3
 
-#define SDM_PULSE_60_MS   60
-#define SDM_PULSE_100_MS  100
-#define SDM_PULSE_200_MS  200
+#define SDM_PULSE_60_MS 60
+#define SDM_PULSE_100_MS 100
+#define SDM_PULSE_200_MS 200
 
-#define SDM_IMPORT_ACTIVE_ENERGY           1
-#define SDM_IMPORT_EXPORT_ACTIVE_ENERGY    2
-#define SDM_EXPORT_ACTIVE_ENERGY           4
-#define SDM_IMPORT_REACTIVE_ENERGY         5
-#define SDM_IMPORT_EXPORT_REACTIVE_ENERGY  6
-#define SDM_EXPORT_REACTIVE_ENERGY         8
+#define SDM_IMPORT_ACTIVE_ENERGY 1
+#define SDM_IMPORT_EXPORT_ACTIVE_ENERGY 2
+#define SDM_EXPORT_ACTIVE_ENERGY 4
+#define SDM_IMPORT_REACTIVE_ENERGY 5
+#define SDM_IMPORT_EXPORT_REACTIVE_ENERGY 6
+#define SDM_EXPORT_REACTIVE_ENERGY 8
 
-#define SDM_KWH_0_001  0
-#define SDM_KWH_0_01   1
-#define SDM_KWH_0_1    2
-#define SDM_KWH_1      3
+#define SDM_KWH_0_001 0
+#define SDM_KWH_0_01 1
+#define SDM_KWH_0_1 2
+#define SDM_KWH_1 3
 
-#define SDM_IMPORT               1
-#define SDM_IMPORT_PLUS_EXPORT   2
-#define SDM_IMPORT_MINUS_EXPORT  3
+#define SDM_IMPORT 1
+#define SDM_IMPORT_PLUS_EXPORT 2
+#define SDM_IMPORT_MINUS_EXPORT 3
 
-/********************************************
- * EXPORTED TYPEDEFS                        *
- ********************************************/
 
-typedef struct SDM_State_Tag {
-  float voltage;
-  float current;
-  float active_power;
-  float apparent_power;
-  float reactive_power;
-  float power_factor;
-  float frequency;
-  float import_active_energy;
-  float export_active_energy;
-  float import_reactive_energy;
-  float export_reactive_energy;
-  float total_system_power_demand;
-  float max_total_system_power_demand;
-  float import_system_power_demand;
-  float max_import_system_power_demand;
-  float export_system_power_demand;
-  float max_export_system_power_demand;
-  float current_demand;
-  float max_current_demand;
-  float total_active_energy;
-  float total_reactive_energy;
+typedef struct SDM_State_Tag
+{
+    float voltage;
+    float current;
+    float active_power;
+    float apparent_power;
+    float reactive_power;
+    float power_factor;
+    float frequency;
+    float import_active_energy;
+    float export_active_energy;
+    float import_reactive_energy;
+    float export_reactive_energy;
+    float total_system_power_demand;
+    float max_total_system_power_demand;
+    float import_system_power_demand;
+    float max_import_system_power_demand;
+    float export_system_power_demand;
+    float max_export_system_power_demand;
+    float current_demand;
+    float max_current_demand;
+    float total_active_energy;
+    float total_reactive_energy;
 
-  uint8_t  relay_pulse_width;
-  uint8_t  network_parity_stop;
-  uint8_t  meter_id;
-  uint8_t  baud_rate;
-  uint8_t  ct_primary_current;
-  uint8_t  pulse1_output_mode;
-  uint16_t time_of_scroll_display;
-  uint16_t pulse1_output;
-  uint16_t measurement_mode;
+    uint8_t  relay_pulse_width;
+    uint8_t  network_parity_stop;
+    uint8_t  meter_id;
+    uint8_t  baud_rate;
+    uint8_t  ct_primary_current;
+    uint8_t  pulse1_output_mode;
+    uint16_t time_of_scroll_display;
+    uint16_t pulse1_output;
+    uint16_t measurement_mode;
 } SDM_State_T;
 
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /**
  * SDM Loop, call this inside Arduino main loop()
@@ -123,7 +112,7 @@ void SetupSDM(void);
  *
  * @return  Pointer to SDM state. Returns NULL if SDM120 is not connected.
  */
-const SDM_State_T * SDM_GetState(void);
+const SDM_State_T *SDM_GetState(void);
 
 /**
  * Set SDM property
@@ -188,4 +177,4 @@ void SDM_SetPulse1Output(uint16_t pulse1_output);
  */
 void SDM_SetMeasurementMode(uint16_t measurement_mode);
 
-#endif  // SDM_H_
+#endif    // SDM_H_

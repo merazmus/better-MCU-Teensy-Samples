@@ -22,20 +22,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MCU_DFU_H
 #define MCU_DFU_H
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
 #include <stdint.h>
+
 #include "Flasher.h"
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
-
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  * Setup DFU
@@ -47,4 +38,4 @@ void SetupDFU(void);
  */
 bool MCU_DFU_IsInProgress(void);
 
-#endif  // MCU_DFU_H
+#endif    // MCU_DFU_H

@@ -22,39 +22,30 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef FLASHER_H_
 #define FLASHER_H_
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
 
 #ifndef __MKL26Z64__
-  #error "Flash support available only on MKL26Z64"
+#error "Flash support available only on MKL26Z64"
 #endif
 
 /**< RAMFUNC attribute definition. Used to place function in RAM */
-#define RAMFUNC  __attribute__ ((section(".fastrun"), noinline, noclone, optimize("Os") ))
+#define RAMFUNC __attribute__((section(".fastrun"), noinline, noclone, optimize("Os")))
 
 /**< Flasher return codes*/
-#define FLASHER_SUCCESS          0
-#define FLASHER_ERROR_ALIGNMENT  1
-#define FLASHER_ERROR_RANGE      2
+#define FLASHER_SUCCESS 0
+#define FLASHER_ERROR_ALIGNMENT 1
+#define FLASHER_ERROR_RANGE 2
 #define FLASHER_ERROR_NOT_ERASED 3
-#define FLASHER_ERROR_VERIFY     4
-#define FLASHER_ERROR_COLLISION  5
-#define FLASHER_ERROR_ACCESS     6
+#define FLASHER_ERROR_VERIFY 4
+#define FLASHER_ERROR_COLLISION 5
+#define FLASHER_ERROR_ACCESS 6
 #define FLASHER_ERROR_PROTECTION 7
 #define FLASHER_ERROR_CONTROLLER 8
-#define FLASHER_ERROR_UNSAFE     9
+#define FLASHER_ERROR_UNSAFE 9
 
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  *  Copy stored firmware to the beggining of flash and reboots.
@@ -105,6 +96,6 @@ int Flasher_EraseSpace(void);
  *  @param num_of_words    Size of data to copy
  *  @return                Flasher return code
  */
-int Flasher_SaveMemoryToFlash(uint32_t address, const uint32_t * src, uint32_t num_of_words);
+int Flasher_SaveMemoryToFlash(uint32_t address, const uint32_t *src, uint32_t num_of_words);
 
-#endif  // FLASHER_H_
+#endif    // FLASHER_H_

@@ -22,38 +22,29 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MESH_H_
 #define MESH_H_
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
 #include "stddef.h"
 #include "stdint.h"
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
 
 /**
  * Supported Mesh Model IDs definitions
  */
-#define MESH_MODEL_ID_LIGHT_LC_SERVER                 0x130F
-#define MESH_MODEL_ID_LIGHT_CTL_SERVER                0x1303
-#define MESH_MODEL_ID_SENSOR_SERVER                   0x1100
-#define MESH_MODEL_ID_HEALTH_SERVER                   0x0002
+#define MESH_MODEL_ID_LIGHT_LC_SERVER 0x130F
+#define MESH_MODEL_ID_LIGHT_CTL_SERVER 0x1303
+#define MESH_MODEL_ID_SENSOR_SERVER 0x1100
+#define MESH_MODEL_ID_HEALTH_SERVER 0x0002
 
 /**
 * Supported Mesh Property IDs definitions
 */
-#define MESH_PROPERTY_ID_PRESENCE_DETECTED            0x004D
-#define MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL  0x004E
-#define MESH_PROPERTY_ID_PRESENT_INPUT_CURRENT        0x0057
-#define MESH_PROPERTY_ID_PRESENT_INPUT_VOLTAGE        0x0059
-#define MESH_PROPERTY_ID_PRESENT_DEVICE_INPUT_POWER   0x0052
-#define MESH_PROPERTY_ID_TOTAL_DEVICE_ENERGY_USE      0x006A
+#define MESH_PROPERTY_ID_PRESENCE_DETECTED 0x004D
+#define MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL 0x004E
+#define MESH_PROPERTY_ID_PRESENT_INPUT_CURRENT 0x0057
+#define MESH_PROPERTY_ID_PRESENT_INPUT_VOLTAGE 0x0059
+#define MESH_PROPERTY_ID_PRESENT_DEVICE_INPUT_POWER 0x0052
+#define MESH_PROPERTY_ID_TOTAL_DEVICE_ENERGY_USE 0x006A
 
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  *  Search for model ID in a message
@@ -63,7 +54,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *  @param expected_model_id    Expected model ID
  *  @return                     True if found, false otherwise
  */
-bool Mesh_IsModelAvailable(uint8_t * p_payload, uint8_t len, uint16_t expected_model_id);
+bool Mesh_IsModelAvailable(uint8_t *p_payload, uint8_t len, uint16_t expected_model_id);
 
 /*
  *  Process Mesh Message Request command
@@ -71,7 +62,7 @@ bool Mesh_IsModelAvailable(uint8_t * p_payload, uint8_t len, uint16_t expected_m
  *  @param p_payload    Pointer to payload
  *  @param len          Payload len
  */
-void Mesh_ProcessMeshCommand(uint8_t * p_payload, size_t len);
+void Mesh_ProcessMeshCommand(uint8_t *p_payload, size_t len);
 
 /*
  *  Send Light Lightness Get message
@@ -98,4 +89,4 @@ extern void ProcessTargetLightness(uint16_t current, uint16_t target, uint32_t t
  */
 extern void ProcessTargetLightnessTemp(uint16_t current, uint16_t target, uint32_t transition_time);
 
-#endif  // MESH_H_
+#endif    // MESH_H_

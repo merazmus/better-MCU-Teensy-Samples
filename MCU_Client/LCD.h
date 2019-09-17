@@ -22,18 +22,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MCU_LCD_H
 #define MCU_LCD_H
 
-/*******************************************
- * INCLUDES                                *
- *******************************************/
 
-#include "stdlib.h"
-#include "stdint.h"
 #include "MCU_Definitions.h"
 #include "MCU_Sensor.h"
+#include "stdint.h"
+#include "stdlib.h"
 
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  *  Setup LCD hardware
@@ -48,7 +42,7 @@ void LCD_UpdateModemState(ModemState_t modemState);
 /*
  *  Update displayed Modem FW version
  */
-void LCD_UpdateModemFwVersion(char * fwVersion, uint8_t fwVerLen);
+void LCD_UpdateModemFwVersion(char *fwVersion, uint8_t fwVerLen);
 
 /*
  *  Update displayed Sensor value
@@ -75,4 +69,4 @@ void LCD_Reinit(void);
  */
 void LCD_EraseSensorsValues(void);
 
-#endif  // MCU_LCD
+#endif    // MCU_LCD

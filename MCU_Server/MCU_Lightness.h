@@ -22,25 +22,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MCU_LIGHTNESS_SERVER_H
 #define MCU_LIGHTNESS_SERVER_H
 
-/*******************************************
-* INCLUDES                                 *
-********************************************/
 
 #include <stdint.h>
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
 
-#define LIGHTNESS_MIN          0            /**< Defines lower range of light lightness */
-#define LIGHTNESS_MAX          UINT16_MAX   /**< Defines upper range of light lightness */
-#define LIGHTNESS_TEMP_MIN     0x0320       /**< Defines lower range of light temperature */
-#define LIGHTNESS_TEMP_MAX     0x4E20       /**< Defines upper range of light temperature */
-#define LIGHTNESS_TEMP_UNKNOWN 0xFFFF       /**< Defines unknown  light temperature value */
+#define LIGHTNESS_MIN 0               /**< Defines lower range of light lightness */
+#define LIGHTNESS_MAX UINT16_MAX      /**< Defines upper range of light lightness */
+#define LIGHTNESS_TEMP_MIN 0x0320     /**< Defines lower range of light temperature */
+#define LIGHTNESS_TEMP_MAX 0x4E20     /**< Defines upper range of light temperature */
+#define LIGHTNESS_TEMP_UNKNOWN 0xFFFF /**< Defines unknown  light temperature value */
 
-/********************************************
- * FUNCTION PROTOTYPES                      *
- ********************************************/
 
 /*
  *  Set Lightness Server instance index
@@ -109,4 +100,4 @@ void SynchronizeLightness(void);
  */
 void IndicateAttentionLightness(bool attention_state, bool led_state);
 
-#endif  // MCU_LIGHTNESS_SERVER_H
+#endif    // MCU_LIGHTNESS_SERVER_H

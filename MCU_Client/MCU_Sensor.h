@@ -22,49 +22,37 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MCU_SENSOR_H
 #define MCU_SENSOR_H
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
 #include <stdint.h>
 
-/********************************************
- * EXPORTED TYPES DEFINITIONS               *
- ********************************************/
 
 typedef union
 {
-  uint32_t als;
-  uint8_t  pir;
-  uint32_t power;
-  uint16_t current; 
-  uint16_t voltage;
-  uint32_t energy;
+    uint32_t als;
+    uint8_t  pir;
+    uint32_t power;
+    uint16_t current;
+    uint16_t voltage;
+    uint32_t energy;
 } SensorValue_T;
 
 typedef enum
 {
-  PRESENCE_DETECTED           = 0x004D,
-  PRESENT_AMBIENT_LIGHT_LEVEL = 0x004E,
-  PRESENT_DEVICE_INPUT_POWER  = 0x0052,
-  PRESENT_INPUT_CURRENT       = 0x0057,
-  PRESENT_INPUT_VOLTAGE       = 0x0059,
-  TOTAL_DEVICE_ENERGY_USE     = 0x006A
+    PRESENCE_DETECTED           = 0x004D,
+    PRESENT_AMBIENT_LIGHT_LEVEL = 0x004E,
+    PRESENT_DEVICE_INPUT_POWER  = 0x0052,
+    PRESENT_INPUT_CURRENT       = 0x0057,
+    PRESENT_INPUT_VOLTAGE       = 0x0059,
+    TOTAL_DEVICE_ENERGY_USE     = 0x006A
 } SensorProperty_T;
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
 
-#define MESH_PROPERTY_PRESENT_AMBIENT_LIGHT_LEVEL_UNKNOWN_VAL    0xFFFFFF
-#define MESH_PROPERTY_PRESENT_DEVICE_INPUT_POWER_UNKNOWN_VAL     0xFFFFFF
-#define MESH_PROPERTY_PRESENT_INPUT_CURRENT_UNKNOWN_VAL          0xFFFF
-#define MESH_PROPERTY_PRESENT_INPUT_VOLTAGE_UNKNOWN_VAL          0xFFFF
-#define MESH_PROPERTY_TOTAL_DEVICE_ENERGY_USE_UNKNOWN_VAL        0xFFFFFF
+#define MESH_PROPERTY_PRESENT_AMBIENT_LIGHT_LEVEL_UNKNOWN_VAL 0xFFFFFF
+#define MESH_PROPERTY_PRESENT_DEVICE_INPUT_POWER_UNKNOWN_VAL 0xFFFFFF
+#define MESH_PROPERTY_PRESENT_INPUT_CURRENT_UNKNOWN_VAL 0xFFFF
+#define MESH_PROPERTY_PRESENT_INPUT_VOLTAGE_UNKNOWN_VAL 0xFFFF
+#define MESH_PROPERTY_TOTAL_DEVICE_ENERGY_USE_UNKNOWN_VAL 0xFFFFFF
 
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  *  Set Sensor Client instance index
@@ -133,4 +121,4 @@ void ProcessTotalDeviceEnergyUse(uint16_t src_addr, SensorValue_T sensor_value);
  */
 void SetupSensor(void);
 
-#endif  // MCU_SENSOR_H
+#endif    // MCU_SENSOR_H

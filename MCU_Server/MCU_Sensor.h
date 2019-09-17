@@ -22,26 +22,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MCU_SENSOR_SERVER_H
 #define MCU_SENSOR_SERVER_H
 
-/********************************************
-* INCLUDES                                 *
-********************************************/
 
 #include <stdint.h>
 
-/********************************************
- * LOCAL #define CONSTANTS AND MACROS       *
- ********************************************/
 
-#define MESH_TOLERANCE(_error)  ((uint16_t) ((4095 * _error) / 100))
+#define MESH_TOLERANCE(_error) ((uint16_t)((4095 * _error) / 100))
 
 /*
  * Sensor Positive Tolerance: 0 percent
  */
-#define PIR_POSITIVE_TOLERANCE             MESH_TOLERANCE(0)
+#define PIR_POSITIVE_TOLERANCE MESH_TOLERANCE(0)
 /*
  * Sensor Negative Tolerance: 0 percent
  */
-#define PIR_NEGATIVE_TOLERANCE             MESH_TOLERANCE(0)
+#define PIR_NEGATIVE_TOLERANCE MESH_TOLERANCE(0)
 /*
  * Sensor Sampling Function: Instantaneous
  *
@@ -56,7 +50,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 0x07 - Count
  * 0x08 - 0xFF - RFU
  */
-#define PIR_SAMPLING_FUNCTION              0x01
+#define PIR_SAMPLING_FUNCTION 0x01
 /*
  * Sensor Measurement Period: Not Applicable
  *
@@ -64,7 +58,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define PIR_MEASUREMENT_PERIOD             0x00
+#define PIR_MEASUREMENT_PERIOD 0x00
 /*
  * Sensor Update Interval: 1 second
  *
@@ -72,16 +66,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define PIR_UPDATE_INTERVAL                0x40
+#define PIR_UPDATE_INTERVAL 0x40
 
 /*
  * Sensor Positive Tolerance: 0 percent
  */
-#define ALS_POSITIVE_TOLERANCE             MESH_TOLERANCE(0)
+#define ALS_POSITIVE_TOLERANCE MESH_TOLERANCE(0)
 /*
  * Sensor Negative Tolerance: 0 percent
  */
-#define ALS_NEGATIVE_TOLERANCE             MESH_TOLERANCE(0)
+#define ALS_NEGATIVE_TOLERANCE MESH_TOLERANCE(0)
 /*
  * Sensor Sampling Function: Instantaneous
  *
@@ -96,7 +90,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 0x07 - Count
  * 0x08 - 0xFF - RFU
  */
-#define ALS_SAMPLING_FUNCTION              0x01
+#define ALS_SAMPLING_FUNCTION 0x01
 /*
  * Sensor Measurement Period: Not Applicable
  *
@@ -104,7 +98,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define ALS_MEASUREMENT_PERIOD             0x00
+#define ALS_MEASUREMENT_PERIOD 0x00
 /*
  * Sensor Update Interval: 1 second
  *
@@ -112,16 +106,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define ALS_UPDATE_INTERVAL                0x40
+#define ALS_UPDATE_INTERVAL 0x40
 
 /*
  * Sensor Positive Tolerance: 0.5 percent
  */
-#define VOLTAGE_SENSOR_POSITIVE_TOLERANCE  MESH_TOLERANCE(0.5)
+#define VOLTAGE_SENSOR_POSITIVE_TOLERANCE MESH_TOLERANCE(0.5)
 /*
  * Sensor Negative Tolerance: 0.5 percent
  */
-#define VOLTAGE_SENSOR_NEGATIVE_TOLERANCE  MESH_TOLERANCE(0.5)
+#define VOLTAGE_SENSOR_NEGATIVE_TOLERANCE MESH_TOLERANCE(0.5)
 /*
  * Sensor Sampling Function: RMS
  *
@@ -136,7 +130,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 0x07 - Count
  * 0x08 - 0xFF - RFU
  */
-#define VOLTAGE_SENSOR_SAMPLING_FUNCTION   0x03
+#define VOLTAGE_SENSOR_SAMPLING_FUNCTION 0x03
 /*
  * Sensor Measurement Period: Not Applicable
  *
@@ -144,7 +138,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define VOLTAGE_SENSOR_MEASUREMENT_PERIOD  0x00
+#define VOLTAGE_SENSOR_MEASUREMENT_PERIOD 0x00
 /*
  * Sensor Update Interval: 1 second
  *
@@ -152,16 +146,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define VOLTAGE_SENSOR_UPDATE_INTERVAL     0x40
+#define VOLTAGE_SENSOR_UPDATE_INTERVAL 0x40
 
 /*
  * Sensor Positive Tolerance: 0.5 percent
  */
-#define CURRENT_SENSOR_POSITIVE_TOLERANCE  MESH_TOLERANCE(0.5)
+#define CURRENT_SENSOR_POSITIVE_TOLERANCE MESH_TOLERANCE(0.5)
 /*
  * Sensor Negative Tolerance: 0.5 percent
  */
-#define CURRENT_SENSOR_NEGATIVE_TOLERANCE  MESH_TOLERANCE(0.5)
+#define CURRENT_SENSOR_NEGATIVE_TOLERANCE MESH_TOLERANCE(0.5)
 /*
  * Sensor Sampling Function: RMS
  *
@@ -176,7 +170,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 0x07 - Count
  * 0x08 - 0xFF - RFU
  */
-#define CURRENT_SENSOR_SAMPLING_FUNCTION   0x03
+#define CURRENT_SENSOR_SAMPLING_FUNCTION 0x03
 /*
  * Sensor Measurement Period: Not Applicable
  *
@@ -184,7 +178,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define CURRENT_SENSOR_MEASUREMENT_PERIOD  0x00
+#define CURRENT_SENSOR_MEASUREMENT_PERIOD 0x00
 /*
  * Sensor Update Interval: 1 second
  *
@@ -192,16 +186,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define CURRENT_SENSOR_UPDATE_INTERVAL     0x40
+#define CURRENT_SENSOR_UPDATE_INTERVAL 0x40
 
 /*
  * Sensor Positive Tolerance: 1 percent
  */
-#define POWER_SENSOR_POSITIVE_TOLERANCE    MESH_TOLERANCE(1)
+#define POWER_SENSOR_POSITIVE_TOLERANCE MESH_TOLERANCE(1)
 /*
  * Sensor Negative Tolerance: 1 percent
  */
-#define POWER_SENSOR_NEGATIVE_TOLERANCE    MESH_TOLERANCE(1)
+#define POWER_SENSOR_NEGATIVE_TOLERANCE MESH_TOLERANCE(1)
 /*
  * Sensor Sampling Function: RMS
  *
@@ -216,7 +210,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 0x07 - Count
  * 0x08 - 0xFF - RFU
  */
-#define POWER_SENSOR_SAMPLING_FUNCTION     0x03
+#define POWER_SENSOR_SAMPLING_FUNCTION 0x03
 /*
  * Sensor Measurement Period: Not Applicable
  *
@@ -224,7 +218,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define POWER_SENSOR_MEASUREMENT_PERIOD    0x00
+#define POWER_SENSOR_MEASUREMENT_PERIOD 0x00
 /*
  * Sensor Update Interval: 1 second
  *
@@ -232,16 +226,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define POWER_SENSOR_UPDATE_INTERVAL       0x40
+#define POWER_SENSOR_UPDATE_INTERVAL 0x40
 
 /*
  * Sensor Positive Tolerance: 1 percent
  */
-#define ENERGY_SENSOR_POSITIVE_TOLERANCE   MESH_TOLERANCE(1)
+#define ENERGY_SENSOR_POSITIVE_TOLERANCE MESH_TOLERANCE(1)
 /*
  * Sensor Negative Tolerance: 1 percent
  */
-#define ENERGY_SENSOR_NEGATIVE_TOLERANCE   MESH_TOLERANCE(1)
+#define ENERGY_SENSOR_NEGATIVE_TOLERANCE MESH_TOLERANCE(1)
 /*
  * Sensor Sampling Function: RMS
  *
@@ -256,7 +250,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 0x07 - Count
  * 0x08 - 0xFF - RFU
  */
-#define ENERGY_SENSOR_SAMPLING_FUNCTION    0x03
+#define ENERGY_SENSOR_SAMPLING_FUNCTION 0x03
 /*
  * Sensor Measurement Period: Not Applicable
  *
@@ -264,7 +258,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define ENERGY_SENSOR_MEASUREMENT_PERIOD   0x00
+#define ENERGY_SENSOR_MEASUREMENT_PERIOD 0x00
 /*
  * Sensor Update Interval: 1 second
  *
@@ -272,17 +266,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Value of 0x00 means 'Not Applicable'
  */
-#define ENERGY_SENSOR_UPDATE_INTERVAL      0x40
+#define ENERGY_SENSOR_UPDATE_INTERVAL 0x40
 
-#define MESH_PROPERTY_PRESENT_AMBIENT_LIGHT_LEVEL_UNKNOWN_VAL    0xFFFFFF
-#define MESH_PROPERTY_PRESENT_DEVICE_INPUT_POWER_UNKNOWN_VAL     0xFFFFFF
-#define MESH_PROPERTY_PRESENT_INPUT_CURRENT_UNKNOWN_VAL          0xFFFF
-#define MESH_PROPERTY_PRESENT_INPUT_VOLTAGE_UNKNOWN_VAL          0xFFFF
-#define MESH_PROPERTY_TOTAL_DEVICE_ENERGY_USE_UNKNOWN_VAL        0xFFFFFF
+#define MESH_PROPERTY_PRESENT_AMBIENT_LIGHT_LEVEL_UNKNOWN_VAL 0xFFFFFF
+#define MESH_PROPERTY_PRESENT_DEVICE_INPUT_POWER_UNKNOWN_VAL 0xFFFFFF
+#define MESH_PROPERTY_PRESENT_INPUT_CURRENT_UNKNOWN_VAL 0xFFFF
+#define MESH_PROPERTY_PRESENT_INPUT_VOLTAGE_UNKNOWN_VAL 0xFFFF
+#define MESH_PROPERTY_TOTAL_DEVICE_ENERGY_USE_UNKNOWN_VAL 0xFFFFFF
 
-/********************************************
- * FUNCTION PROTOTYPES                      *
- ********************************************/
 
 /*
  *  Sensor Server ALS instance index setter
@@ -340,6 +331,6 @@ void SetupSensorServer(void);
 /*
  *  Sensor server main function, should be called in Arduino main loop
  */
-void LoopSensorSever(void);
+void LoopSensorServer(void);
 
-#endif  // MCU_SENSOR_SERVER_H
+#endif    // MCU_SENSOR_SERVER_H

@@ -22,17 +22,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MCU_DEFINITIONS_H
 #define MCU_DEFINITIONS_H
 
-/********************************************
- * EXPORTED TYPES DEFINITIONS               *
- ********************************************/
 
 typedef enum
 {
-  MODEM_STATE_INIT_DEVICE,
-  MODEM_STATE_DEVICE,
-  MODEM_STATE_INIT_NODE,
-  MODEM_STATE_NODE,
-  MODEM_STATE_UNKNOWN,
+    MODEM_STATE_INIT_DEVICE,
+    MODEM_STATE_DEVICE,
+    MODEM_STATE_INIT_NODE,
+    MODEM_STATE_NODE,
+    MODEM_STATE_UNKNOWN,
 } ModemState_t;
 
-#endif // MCU_DEFINITIONS_H
+#endif    // MCU_DEFINITIONS_H

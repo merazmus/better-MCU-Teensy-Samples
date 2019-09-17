@@ -22,22 +22,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MCU_HEALTH_H
 #define MCU_HEALTH_H
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
 #include <stdint.h>
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
 
 /** Silvair Mesh Model Company Id */
-#define SILVAIR_ID                     0x0136u
+#define SILVAIR_ID 0x0136u
 
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  *  Check if there is test in progress.
@@ -56,12 +47,12 @@ void LoopHealth(void);
 
 /*
  * Set index of registered Health Server model
- */ 
+ */
 void SetHealthServerIdx(uint8_t idx);
 
 /*
  * Get index of registered Health Server model
- */ 
+ */
 uint8_t GetHealthServerIdx(void);
 
-#endif  // MCU_HEALTH_H
+#endif    // MCU_HEALTH_H

@@ -22,15 +22,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MCU_SWITCH_H
 #define MCU_SWITCH_H
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
 #include <stdint.h>
 
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  *  Setup light lightness client hardware
@@ -70,4 +64,4 @@ void SetInstanceIdxSwitch2(uint8_t idx);
  */
 uint8_t GetInstanceIdxSwitch2(void);
 
-#endif  // MCU_SWITCH_H
+#endif    // MCU_SWITCH_H

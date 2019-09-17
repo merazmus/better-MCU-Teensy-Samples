@@ -22,19 +22,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef MCU_ATTENTION_H
 #define MCU_ATTENTION_H
 
-/********************************************
- * INCLUDES                                 *
- ********************************************/
 
 #include <stdint.h>
 
-/********************************************
- * EXPORTED #define CONSTANTS AND MACROS    *
- ********************************************/
-
-/********************************************
- * EXPORTED FUNCTIONS PROTOTYPES            *
- ********************************************/
 
 /*
  * Setup Attention
@@ -51,4 +41,4 @@ void LoopAttention(void);
  */
 void AttentionStateSet(bool state);
 
-#endif  // MCU_ATTENTION_H
+#endif    // MCU_ATTENTION_H

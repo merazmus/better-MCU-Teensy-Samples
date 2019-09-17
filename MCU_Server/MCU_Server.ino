@@ -19,44 +19,33 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/********************************************
-* INCLUDES                                 *
-********************************************/
 
-#include "Config.h"
-#include "MCU_Health.h"
-#include "MCU_Lightness.h"
-#include "MCU_Sensor.h"
-#include "MCU_DFU.h"
-#include "MCU_Attention.h"
-#include "Mesh.h"
-#include "UART.h"
-#include "SDM.h"
 #include <math.h>
 #include <string.h>
 
-/********************************************
- * LOCAL #define CONSTANTS AND MACROS       *
- ********************************************/
+#include "Config.h"
+#include "MCU_Attention.h"
+#include "MCU_DFU.h"
+#include "MCU_Health.h"
+#include "MCU_Lightness.h"
+#include "MCU_Sensor.h"
+#include "Mesh.h"
+#include "SDM.h"
+#include "UART.h"
+
 
 #define CTL_TEMPERATURE_RANGE_PLACEHOLDER 0
 
-/********************************************
- * EXPORTED TYPES DEFINITIONS               *
- ********************************************/
 
 enum ModemState_t
 {
-  MODEM_STATE_INIT_DEVICE,
-  MODEM_STATE_DEVICE,
-  MODEM_STATE_INIT_NODE,
-  MODEM_STATE_NODE,
-  MODEM_STATE_UNKNOWN = 0xFF,
+    MODEM_STATE_INIT_DEVICE,
+    MODEM_STATE_DEVICE,
+    MODEM_STATE_INIT_NODE,
+    MODEM_STATE_NODE,
+    MODEM_STATE_UNKNOWN = 0xFF,
 };
 
-/********************************************
- * STATIC VARIABLES                         *
- ********************************************/
 
 static const uint8_t ctl_registration[] = {
     lowByte(MESH_MODEL_ID_LIGHT_CTL_SERVER),
@@ -77,7 +66,7 @@ static const uint8_t pir_registration[] = {
     lowByte(MESH_MODEL_ID_SENSOR_SERVER),
     highByte(MESH_MODEL_ID_SENSOR_SERVER),
 
-    0x01,   //Number of sensors
+    0x01,    //Number of sensors
 
     lowByte(MESH_PROPERTY_ID_PRESENCE_DETECTED),
     highByte(MESH_PROPERTY_ID_PRESENCE_DETECTED),
@@ -94,7 +83,7 @@ static const uint8_t als_registration[] = {
     lowByte(MESH_MODEL_ID_SENSOR_SERVER),
     highByte(MESH_MODEL_ID_SENSOR_SERVER),
 
-    0x01,   //Number of sensors
+    0x01,    //Number of sensors
 
     lowByte(MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL),
     highByte(MESH_PROPERTY_ID_PRESENT_AMBIENT_LIGHT_LEVEL),
@@ -111,7 +100,7 @@ static const uint8_t current_voltage_registration[] = {
     lowByte(MESH_MODEL_ID_SENSOR_SERVER),
     highByte(MESH_MODEL_ID_SENSOR_SERVER),
 
-    0x02,   //Number of sensors
+    0x02,    //Number of sensors
 
     lowByte(MESH_PROPERTY_ID_PRESENT_INPUT_VOLTAGE),
     highByte(MESH_PROPERTY_ID_PRESENT_INPUT_VOLTAGE),
@@ -138,7 +127,7 @@ static const uint8_t power_energy_registration[] = {
     lowByte(MESH_MODEL_ID_SENSOR_SERVER),
     highByte(MESH_MODEL_ID_SENSOR_SERVER),
 
-    0x02,   //Number of sensors
+    0x02,    //Number of sensors
 
     lowByte(MESH_PROPERTY_ID_PRESENT_DEVICE_INPUT_POWER),
     highByte(MESH_PROPERTY_ID_PRESENT_DEVICE_INPUT_POWER),
@@ -165,7 +154,7 @@ static const uint8_t health_registration[] = {
     lowByte(MESH_MODEL_ID_HEALTH_SERVER),
     highByte(MESH_MODEL_ID_HEALTH_SERVER),
 
-    0x01,   //Number of company IDs
+    0x01,    //Number of company IDs
 
     lowByte(SILVAIR_ID),
     highByte(SILVAIR_ID),
@@ -173,7 +162,7 @@ static const uint8_t health_registration[] = {
 
 static ModemState_t ModemState = MODEM_STATE_UNKNOWN;
 
-#if ENABLE_CTL==1 && ENABLE_LC==1
+#if ENABLE_CTL == 1 && ENABLE_LC == 1
 #undef ENABLE_LC
 #define ENABLE_LC 0
 #endif
@@ -183,9 +172,6 @@ static bool       LCEnabled     = (ENABLE_LC != 0);
 static const bool PIRALSEnabled = (ENABLE_PIRALS != 0);
 static const bool ENERGYEnabled = (ENABLE_ENERGY != 0);
 
-/********************************************
- * LOCAL FUNCTIONS PROTOTYPES               *
- ********************************************/
 
 /*
  *  Setup debug interface
@@ -198,7 +184,7 @@ void SetupDebug(void);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len);
+void ProcessEnterInitDevice(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Create Instances Response command
@@ -206,7 +192,7 @@ void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void ProcessEnterDevice(uint8_t * p_payload, uint8_t len);
+void ProcessEnterDevice(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Init Node Event command
@@ -214,7 +200,7 @@ void ProcessEnterDevice(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len);
+void ProcessEnterInitNode(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Start Node Response command
@@ -222,7 +208,7 @@ void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void ProcessEnterNode(uint8_t * p_payload, uint8_t len);
+void ProcessEnterNode(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Mesh Message Request command
@@ -230,7 +216,7 @@ void ProcessEnterNode(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void ProcessMeshCommand(uint8_t * p_payload, uint8_t len);
+void ProcessMeshCommand(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Error command
@@ -238,7 +224,7 @@ void ProcessMeshCommand(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void ProcessError(uint8_t * p_payload, uint8_t len);
+void ProcessError(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Process Start Test Request command
@@ -246,7 +232,7 @@ void ProcessError(uint8_t * p_payload, uint8_t len);
  *  @param * p_payload   Command payload
  *  @param len           Payload len
  */
-void ProcessStartTest(uint8_t * p_payload, uint8_t len);
+void ProcessStartTest(uint8_t *p_payload, uint8_t len);
 
 /*
  *  Send Firmware Version Set request
@@ -268,231 +254,228 @@ void setup(void);
  */
 void loop(void);
 
-/********************************************
- * FUNCTION DEFINITIONS                     *
- ********************************************/
 
 void SetupDebug(void)
 {
-  DEBUG_INTERFACE.begin(DEBUG_INTERFACE_BAUDRATE);
-  // Waits for debug interface initialization.
-  delay(1000);
+    DEBUG_INTERFACE.begin(DEBUG_INTERFACE_BAUDRATE);
+    // Waits for debug interface initialization.
+    delay(1000);
 }
 
-void ProcessEnterInitDevice(uint8_t * p_payload, uint8_t len)
+void ProcessEnterInitDevice(uint8_t *p_payload, uint8_t len)
 {
-  INFO("Init Device State.\n");
-  ModemState = MODEM_STATE_INIT_DEVICE;
-  AttentionStateSet(false);
+    INFO("Init Device State.\n");
+    ModemState = MODEM_STATE_INIT_DEVICE;
+    AttentionStateSet(false);
 
-  if(!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_CTL_SERVER) && CTLEnabled)
-  {
-    INFO("Modem does not support Light CTL Server.\n");
-
-    if(Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_LC_SERVER))
+    if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_CTL_SERVER) && CTLEnabled)
     {
-      INFO("Disabling CTL activating LC.\n");
-      CTLEnabled = false;
-      LCEnabled  = true;
-    }
-  }
+        INFO("Modem does not support Light CTL Server.\n");
 
-  if(!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_LC_SERVER) && LCEnabled)
-  {
-    INFO("Modem does not support Light LC Server.\n");
-    return;
-  }
-
-  if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_SENSOR_SERVER) && (PIRALSEnabled || ENERGYEnabled))
-  {
-    INFO("Modem does not support Sensor Server.\n");
-    return;
-  }
-
-  size_t payload_len = 0;
-
-  if(CTLEnabled)
-    payload_len += sizeof(ctl_registration);
-  else if(LCEnabled)
-    payload_len += sizeof(lightness_registration);
-
-  if(PIRALSEnabled)
-    payload_len += sizeof(pir_registration) + sizeof(als_registration);
-
-  if(ENERGYEnabled)
-    payload_len += sizeof(current_voltage_registration) + sizeof(power_energy_registration);
-
-  payload_len += sizeof(health_registration);
-
-  uint8_t model_ids[payload_len];
-  size_t  index = 0;
-
-  if(CTLEnabled)
-  {
-    memcpy(model_ids + index, ctl_registration, sizeof(ctl_registration));
-    index += sizeof(ctl_registration);
-  }
-  else if(LCEnabled)
-  {
-    memcpy(model_ids + index, lightness_registration, sizeof(lightness_registration));
-    index += sizeof(lightness_registration);
-  }
-
-  if(PIRALSEnabled)
-  {
-    memcpy(model_ids + index, pir_registration, sizeof(pir_registration));
-    index += sizeof(pir_registration);
-    memcpy(model_ids + index, als_registration, sizeof(als_registration));
-    index += sizeof(als_registration);
-  }
-
-  if(ENERGYEnabled)
-  {
-    memcpy(model_ids + index, current_voltage_registration, sizeof(current_voltage_registration));
-    index += sizeof(current_voltage_registration);
-    memcpy(model_ids + index, power_energy_registration, sizeof(power_energy_registration));
-    index += sizeof(power_energy_registration);
-  }
-
-  memcpy(model_ids + index, health_registration, sizeof(health_registration));
-
-  SendFirmwareVersionSetRequest();
-  UART_SendCreateInstancesRequest(model_ids, sizeof(model_ids));
-}
-
-void ProcessEnterDevice(uint8_t * p_payload, uint8_t len)
-{
-  INFO("Device State.\n");
-
-  EnableStartupSequence();
-  ModemState = MODEM_STATE_DEVICE;
-}
-
-void ProcessEnterInitNode(uint8_t * p_payload, uint8_t len)
-{
-  INFO("Init Node State.\n");
-  ModemState = MODEM_STATE_INIT_NODE;
-  AttentionStateSet(false);
-
-  SetLightnessServerIdx(INSTANCE_INDEX_UNKNOWN);
-  SetSensorServerPIRIdx(INSTANCE_INDEX_UNKNOWN);
-  SetSensorServerALSIdx(INSTANCE_INDEX_UNKNOWN);
-  SetSensorServerVoltCurrIdx(INSTANCE_INDEX_UNKNOWN);
-  SetSensorServerPowEnergyIdx(INSTANCE_INDEX_UNKNOWN);
-
-  uint8_t sensor_server_model_id_occurency = 0;
-
-  for (size_t index = 0; index < len;)
-  {
-    uint16_t model_id = ((uint16_t)p_payload[index++]);
-    model_id         |= ((uint16_t)p_payload[index++] << 8);
-
-    if (MESH_MODEL_ID_LIGHT_CTL_SERVER == model_id || MESH_MODEL_ID_LIGHT_LC_SERVER == model_id)
-    {
-      uint16_t current_model_id_instance_index = index/2;
-      SetLightnessServerIdx(current_model_id_instance_index);
-      SetLightCTLSupport(model_id == MESH_MODEL_ID_LIGHT_CTL_SERVER);
+        if (Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_LC_SERVER))
+        {
+            INFO("Disabling CTL activating LC.\n");
+            CTLEnabled = false;
+            LCEnabled  = true;
+        }
     }
 
-    if (model_id == MESH_MODEL_ID_SENSOR_SERVER)
+    if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_LC_SERVER) && LCEnabled)
     {
-      uint16_t current_model_id_instance_index = index/2;
-      sensor_server_model_id_occurency++;
-
-      if (sensor_server_model_id_occurency == PIR_REGISTRATION_ORDER && PIRALSEnabled)
-      {
-        SetSensorServerPIRIdx(current_model_id_instance_index);
-      }
-      else if (sensor_server_model_id_occurency == ALS_REGISTRATION_ORDER && PIRALSEnabled)
-      {
-        SetSensorServerALSIdx(current_model_id_instance_index);
-      }
-      else if (sensor_server_model_id_occurency == VOLT_CURR_REGISTRATION_ORDER && ENERGYEnabled)
-      {
-        SetSensorServerVoltCurrIdx(current_model_id_instance_index);
-      }
-      else if (sensor_server_model_id_occurency == POW_ENERGY_REGISTRATION_ORDER && ENERGYEnabled)
-      {
-        SetSensorServerPowEnergyIdx(current_model_id_instance_index);
-      }
+        INFO("Modem does not support Light LC Server.\n");
+        return;
     }
 
-    if (model_id == MESH_MODEL_ID_HEALTH_SERVER)
+    if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_SENSOR_SERVER) && (PIRALSEnabled || ENERGYEnabled))
     {
-      uint16_t current_model_id_instance_index = index/2;
-      SetHealthServerIdx(current_model_id_instance_index);
+        INFO("Modem does not support Sensor Server.\n");
+        return;
     }
-  }
 
-  if (GetLightnessServerIdx() == INSTANCE_INDEX_UNKNOWN && (LCEnabled || CTLEnabled))
-  {
-    ModemState = MODEM_STATE_UNKNOWN;
-    INFO("Light CTL/LC Server model id not found in init node message\n");
-    return;
-  }
+    size_t payload_len = 0;
 
-  if (GetSensorServerPIRIdx() == INSTANCE_INDEX_UNKNOWN && PIRALSEnabled)
-  {
-    ModemState = MODEM_STATE_UNKNOWN;
-    INFO("Sensor server (PIR) model id not found in init node message\n");
-    return;
-  }
+    if (CTLEnabled)
+        payload_len += sizeof(ctl_registration);
+    else if (LCEnabled)
+        payload_len += sizeof(lightness_registration);
 
-  if (GetSensorServerALSIdx() == INSTANCE_INDEX_UNKNOWN && PIRALSEnabled)
-  {
-    ModemState = MODEM_STATE_UNKNOWN;
-    INFO("Sensor server (ALS) model id not found in init node message\n");
-    return;
-  }
+    if (PIRALSEnabled)
+        payload_len += sizeof(pir_registration) + sizeof(als_registration);
 
-  if (GetSensorServerVoltCurrIdx() == INSTANCE_INDEX_UNKNOWN && ENERGYEnabled)
-  {
-    ModemState = MODEM_STATE_UNKNOWN;
-    INFO("Sensor server (Voltage Current) model id not found in init node message\n");
-    return;
-  }
+    if (ENERGYEnabled)
+        payload_len += sizeof(current_voltage_registration) + sizeof(power_energy_registration);
 
-  if (GetSensorServerPowEnergyIdx() == INSTANCE_INDEX_UNKNOWN && ENERGYEnabled)
-  {
-    ModemState = MODEM_STATE_UNKNOWN;
-    INFO("Sensor server (Power Energy) model id not found in init node message\n");
-    return;
-  }
+    payload_len += sizeof(health_registration);
 
-   if (GetHealthServerIdx() == INSTANCE_INDEX_UNKNOWN)
-   {
-     ModemState = MODEM_STATE_UNKNOWN;
-     INFO("Health Server model id not found in init node message\n");
-     return;
-   }
+    uint8_t model_ids[payload_len];
+    size_t  index = 0;
 
-  SendFirmwareVersionSetRequest();
-  UART_StartNodeRequest();
+    if (CTLEnabled)
+    {
+        memcpy(model_ids + index, ctl_registration, sizeof(ctl_registration));
+        index += sizeof(ctl_registration);
+    }
+    else if (LCEnabled)
+    {
+        memcpy(model_ids + index, lightness_registration, sizeof(lightness_registration));
+        index += sizeof(lightness_registration);
+    }
+
+    if (PIRALSEnabled)
+    {
+        memcpy(model_ids + index, pir_registration, sizeof(pir_registration));
+        index += sizeof(pir_registration);
+        memcpy(model_ids + index, als_registration, sizeof(als_registration));
+        index += sizeof(als_registration);
+    }
+
+    if (ENERGYEnabled)
+    {
+        memcpy(model_ids + index, current_voltage_registration, sizeof(current_voltage_registration));
+        index += sizeof(current_voltage_registration);
+        memcpy(model_ids + index, power_energy_registration, sizeof(power_energy_registration));
+        index += sizeof(power_energy_registration);
+    }
+
+    memcpy(model_ids + index, health_registration, sizeof(health_registration));
+
+    SendFirmwareVersionSetRequest();
+    UART_SendCreateInstancesRequest(model_ids, sizeof(model_ids));
 }
 
-void ProcessEnterNode(uint8_t * p_payload, uint8_t len)
+void ProcessEnterDevice(uint8_t *p_payload, uint8_t len)
 {
-  INFO("Node State.\n");
-  ModemState = MODEM_STATE_NODE;
+    INFO("Device State.\n");
 
-  SynchronizeLightness();
+    EnableStartupSequence();
+    ModemState = MODEM_STATE_DEVICE;
 }
 
-void ProcessMeshCommand(uint8_t * p_payload, uint8_t len)
+void ProcessEnterInitNode(uint8_t *p_payload, uint8_t len)
 {
-  Mesh_ProcessMeshCommand(p_payload, len);
+    INFO("Init Node State.\n");
+    ModemState = MODEM_STATE_INIT_NODE;
+    AttentionStateSet(false);
+
+    SetLightnessServerIdx(INSTANCE_INDEX_UNKNOWN);
+    SetSensorServerPIRIdx(INSTANCE_INDEX_UNKNOWN);
+    SetSensorServerALSIdx(INSTANCE_INDEX_UNKNOWN);
+    SetSensorServerVoltCurrIdx(INSTANCE_INDEX_UNKNOWN);
+    SetSensorServerPowEnergyIdx(INSTANCE_INDEX_UNKNOWN);
+
+    uint8_t sensor_server_model_id_occurency = 0;
+
+    for (size_t index = 0; index < len;)
+    {
+        uint16_t model_id = ((uint16_t)p_payload[index++]);
+        model_id |= ((uint16_t)p_payload[index++] << 8);
+
+        if (MESH_MODEL_ID_LIGHT_CTL_SERVER == model_id || MESH_MODEL_ID_LIGHT_LC_SERVER == model_id)
+        {
+            uint16_t current_model_id_instance_index = index / 2;
+            SetLightnessServerIdx(current_model_id_instance_index);
+            SetLightCTLSupport(model_id == MESH_MODEL_ID_LIGHT_CTL_SERVER);
+        }
+
+        if (model_id == MESH_MODEL_ID_SENSOR_SERVER)
+        {
+            uint16_t current_model_id_instance_index = index / 2;
+            sensor_server_model_id_occurency++;
+
+            if (sensor_server_model_id_occurency == PIR_REGISTRATION_ORDER && PIRALSEnabled)
+            {
+                SetSensorServerPIRIdx(current_model_id_instance_index);
+            }
+            else if (sensor_server_model_id_occurency == ALS_REGISTRATION_ORDER && PIRALSEnabled)
+            {
+                SetSensorServerALSIdx(current_model_id_instance_index);
+            }
+            else if (sensor_server_model_id_occurency == VOLT_CURR_REGISTRATION_ORDER && ENERGYEnabled)
+            {
+                SetSensorServerVoltCurrIdx(current_model_id_instance_index);
+            }
+            else if (sensor_server_model_id_occurency == POW_ENERGY_REGISTRATION_ORDER && ENERGYEnabled)
+            {
+                SetSensorServerPowEnergyIdx(current_model_id_instance_index);
+            }
+        }
+
+        if (model_id == MESH_MODEL_ID_HEALTH_SERVER)
+        {
+            uint16_t current_model_id_instance_index = index / 2;
+            SetHealthServerIdx(current_model_id_instance_index);
+        }
+    }
+
+    if (GetLightnessServerIdx() == INSTANCE_INDEX_UNKNOWN && (LCEnabled || CTLEnabled))
+    {
+        ModemState = MODEM_STATE_UNKNOWN;
+        INFO("Light CTL/LC Server model id not found in init node message\n");
+        return;
+    }
+
+    if (GetSensorServerPIRIdx() == INSTANCE_INDEX_UNKNOWN && PIRALSEnabled)
+    {
+        ModemState = MODEM_STATE_UNKNOWN;
+        INFO("Sensor server (PIR) model id not found in init node message\n");
+        return;
+    }
+
+    if (GetSensorServerALSIdx() == INSTANCE_INDEX_UNKNOWN && PIRALSEnabled)
+    {
+        ModemState = MODEM_STATE_UNKNOWN;
+        INFO("Sensor server (ALS) model id not found in init node message\n");
+        return;
+    }
+
+    if (GetSensorServerVoltCurrIdx() == INSTANCE_INDEX_UNKNOWN && ENERGYEnabled)
+    {
+        ModemState = MODEM_STATE_UNKNOWN;
+        INFO("Sensor server (Voltage Current) model id not found in init node message\n");
+        return;
+    }
+
+    if (GetSensorServerPowEnergyIdx() == INSTANCE_INDEX_UNKNOWN && ENERGYEnabled)
+    {
+        ModemState = MODEM_STATE_UNKNOWN;
+        INFO("Sensor server (Power Energy) model id not found in init node message\n");
+        return;
+    }
+
+    if (GetHealthServerIdx() == INSTANCE_INDEX_UNKNOWN)
+    {
+        ModemState = MODEM_STATE_UNKNOWN;
+        INFO("Health Server model id not found in init node message\n");
+        return;
+    }
+
+    SendFirmwareVersionSetRequest();
+    UART_StartNodeRequest();
 }
- 
-void ProcessError(uint8_t * p_payload, uint8_t len)
+
+void ProcessEnterNode(uint8_t *p_payload, uint8_t len)
 {
-  INFO("Error %d\n\n.", p_payload[0]);
+    INFO("Node State.\n");
+    ModemState = MODEM_STATE_NODE;
+
+    SynchronizeLightness();
+}
+
+void ProcessMeshCommand(uint8_t *p_payload, uint8_t len)
+{
+    Mesh_ProcessMeshCommand(p_payload, len);
+}
+
+void ProcessError(uint8_t *p_payload, uint8_t len)
+{
+    INFO("Error %d\n\n.", p_payload[0]);
 }
 
 void SendFirmwareVersionSetRequest(void)
 {
-  const char * p_firmware_version = BUILD_NUMBER;
+    const char *p_firmware_version = BUILD_NUMBER;
 
-  UART_SendFirmwareVersionSetRequest((uint8_t *)p_firmware_version, strlen(p_firmware_version));
+    UART_SendFirmwareVersionSetRequest((uint8_t *)p_firmware_version, strlen(p_firmware_version));
 }
 
 void ProcessFirmwareVersionSetResponse(void)
@@ -501,40 +484,43 @@ void ProcessFirmwareVersionSetResponse(void)
 
 void setup(void)
 {
-  SetupDebug();
-  INFO("Server Sample.\n");
-  SetupAttention();
-  SetupHealth();
+    SetupDebug();
+    INFO("Server Sample.\n");
+    SetupAttention();
+    SetupHealth();
 
-  if(LCEnabled || CTLEnabled) SetupLightnessServer();
-  if(PIRALSEnabled)           SetupSensorServer();
-  if(ENERGYEnabled)           SetupSDM();
+    if (LCEnabled || CTLEnabled)
+        SetupLightnessServer();
+    if (PIRALSEnabled)
+        SetupSensorServer();
+    if (ENERGYEnabled)
+        SetupSDM();
 
-  UART_Init();
-  UART_SendSoftwareResetRequest();
+    UART_Init();
+    UART_SendSoftwareResetRequest();
 
-  SetupDFU();
+    SetupDFU();
 }
 
 void loop(void)
 {
-  UART_ProcessIncomingCommand();
+    UART_ProcessIncomingCommand();
 
-  if (!MCU_DFU_IsInProgress())
-  {
-    LoopHealth();
-    if (!IsTestInProgress())
+    if (!MCU_DFU_IsInProgress())
     {
-      // Health and Attention shares Status LED
-      LoopAttention();
-    }
+        LoopHealth();
+        if (!IsTestInProgress())
+        {
+            // Health and Attention shares Status LED
+            LoopAttention();
+        }
 
-    LoopLightnessServer();
-    LoopSDM();
+        LoopLightnessServer();
+        LoopSDM();
 
-    if (MODEM_STATE_NODE == ModemState)
-    {
-      LoopSensorSever();
+        if (MODEM_STATE_NODE == ModemState)
+        {
+            LoopSensorServer();
+        }
     }
-  }
 }
