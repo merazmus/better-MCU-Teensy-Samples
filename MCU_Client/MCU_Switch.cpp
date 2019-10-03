@@ -30,7 +30,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Encoder.h"
 #include "LCD.h"
 #include "Mesh.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 /**
@@ -44,12 +44,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PB_ENCODER_B PIN_ENCODER_B /**< Defines Encoder B pin location. */
 
 /**
- * Light Lightness Client configuration
+ * Generic Level messages for Light CTL Client configuration
  */
-#define LIGHTNESS_MIN 0u            /**< Defines lower range of light lightness. */
-#define LIGHTNESS_MAX UINT16_MAX    /**< Defines upper range of light lightness. */
-#define LIGHTNESS_MIN_CHANGE 0x500u /**< Defines the lowest reported changed. */
-#define LIGHTNESS_INTVL_MS 50u      /**< Defines the shortest interval between two LightLightness messages. */
+
+#define GENERIC_LEVEL_MIN INT16_MIN     /**< Defines lower range of light lightness. */
+#define GENERIC_LEVEL_MAX INT16_MAX     /**< Defines upper range of light lightness. */
+#define GENERIC_LEVEL_MIN_CHANGE 0x200u /**< Defines the lowest reported changed. */
+#define GENERIC_LEVEL_INTVL_MS 50u      /**< Defines the shortest interval between two LightLightness messages. */
 
 /**
  * On Off communication properties
@@ -76,9 +77,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /**
  * Default communication properties
  */
-#define LIGHT_LIGHTNESS_NUMBER_OF_REPEATS 0 /**< Defines default number of repeats while sending mesh message request */
-#define LIGHT_LIGHTNESS_TRANSITION_TIME_MS 100 /**< Defines default transition time */
-#define LIGHT_LIGHTNESS_DELAY_TIME_MS 0        /**< Defines default delay time */
+#define GENERIC_LEVEL_NUMBER_OF_REPEATS 0 /**< Defines default number of repeats while sending mesh message request */
+#define GENERIC_LEVEL_TRANSITION_TIME_MS 100 /**< Defines default transition time */
+#define GENERIC_LEVEL_DELAY_TIME_MS 0        /**< Defines default delay time */
 
 #define POT_DEADBAND 20 /**< Potentiometer deadband. About 2% of full range */
 
@@ -88,8 +89,8 @@ static volatile bool Off1                      = false; /**< Implies if Generic 
 static volatile bool On2                       = false; /**< Implies if Generic ON button has been pushed */
 static volatile bool Off2                      = false; /**< Implies if Generic OFF button has been pushed */
 static volatile bool Reinit                    = false; /**< Implies if LCD reinit button has been pushed */
-static uint8_t       LightLcClient1InstanceIdx = INSTANCE_INDEX_UNKNOWN;
-static uint8_t       LightLcClient2InstanceIdx = INSTANCE_INDEX_UNKNOWN;
+static uint8_t       LightCtlClientInstanceIdx = INSTANCE_INDEX_UNKNOWN;
+static uint8_t       LightLcClientInstanceIdx  = INSTANCE_INDEX_UNKNOWN;
 static Encoder       DeltaEncoder(PB_ENCODER_B, PB_ENCODER_A);
 
 
@@ -119,23 +120,23 @@ static void InterruptOff2PBClick(void);
 static void InterruptLcdReinit(void);
 
 /*
- *  Check if lightness need an update
+ *  Check if temperature need an update
  *
- *  @param lightness_actual  Actual lightness value
+ *  @param gen_level Generic Level of temperature
  */
-static bool HasLightnessChanged(int lightness_actual);
+static bool HasGenLevelChanged(int gen_level);
 
 /*
- *  Get set lightness value
+ *  Get Generic Level value
  */
-static uint16_t LightnessGet(void);
+static int16_t GenericLevelGet(void);
 
 /*
- *  Print lightness on debug interface
+ *  Print Generic Level of Temperature on debug interface
  *
- *  @param lightness_actual  Actual lightness value
+ *  @param gen_level Generic Level value
  */
-static void PrintLightness(unsigned lightness_actual);
+static void PrintGenericLevelTemperature(int gen_level);
 
 
 static void InterruptOn1PBClick(void)
@@ -183,21 +184,21 @@ static void InterruptLcdReinit(void)
     Reinit = true;
 }
 
-static bool HasLightnessChanged(int lightness_actual)
+static bool HasGenLevelChanged(int gen_level)
 {
-    static int  prev_lightness          = LIGHTNESS_MIN;
-    static bool is_prev_lightness_valid = false;
+    static int  prev_gen_level          = GENERIC_LEVEL_MIN;
+    static bool is_prev_gen_level_valid = false;
 
-    if (!is_prev_lightness_valid)
+    if (!is_prev_gen_level_valid)
     {
-        prev_lightness          = lightness_actual;
-        is_prev_lightness_valid = true;
+        prev_gen_level          = gen_level;
+        is_prev_gen_level_valid = true;
         return false;
     }
-    else if ((abs(lightness_actual - prev_lightness) > LIGHTNESS_MIN_CHANGE) ||
-             ((lightness_actual == 0) && (prev_lightness != 0)))
+    else if ((abs(gen_level - prev_gen_level) > GENERIC_LEVEL_MIN_CHANGE) ||
+             ((gen_level == 0) && (prev_gen_level != 0)))
     {
-        prev_lightness = lightness_actual;
+        prev_gen_level = gen_level;
         return true;
     }
     else
@@ -206,42 +207,38 @@ static bool HasLightnessChanged(int lightness_actual)
     }
 }
 
-static uint16_t LightnessGet(void)
+static int16_t GenericLevelGet(void)
 {
-    const uint32_t coefficient        = ((LIGHTNESS_MAX - LIGHTNESS_MIN) * UINT16_MAX) / (ANALOG_MAX - ANALOG_MIN);
-    uint16_t       analog_measurement = analogRead(PIN_ANALOG);
+    uint16_t analog_measurement = analogRead(PIN_ANALOG);
 
-    if (analog_measurement < POT_DEADBAND)
-        analog_measurement = 0;
-
-    return (coefficient * (analog_measurement - ANALOG_MIN)) / UINT16_MAX + LIGHTNESS_MIN;
+    return map(analog_measurement, ANALOG_MIN, ANALOG_MAX, GENERIC_LEVEL_MIN, GENERIC_LEVEL_MAX);
 }
 
-static void PrintLightness(unsigned lightness_actual)
+static void PrintGenericLevelTemperature(int gen_level)
 {
-    unsigned percentage = (lightness_actual * 100.0) / LIGHTNESS_MAX;
-    INFO("Current Lightness is %d (%d%)\n", lightness_actual, percentage);
+    unsigned percentage = ((gen_level - GENERIC_LEVEL_MIN) * 100.0) / (GENERIC_LEVEL_MAX - GENERIC_LEVEL_MIN);
+    INFO("Current Generic Level of Temperature is %d (%d%)\n", gen_level, percentage);
 }
 
 
-void SetInstanceIdxSwitch1(uint8_t idx)
+void SetInstanceIdxCtl(uint8_t idx)
 {
-    LightLcClient1InstanceIdx = idx;
+    LightCtlClientInstanceIdx = idx;
 }
 
-uint8_t GetInstanceIdxSwitch1(void)
+uint8_t GetInstanceIdxCtl(void)
 {
-    return LightLcClient1InstanceIdx;
+    return LightCtlClientInstanceIdx;
 }
 
-void SetInstanceIdxSwitch2(uint8_t idx)
+void SetInstanceIdxLc(uint8_t idx)
 {
-    LightLcClient2InstanceIdx = idx;
+    LightLcClientInstanceIdx = idx;
 }
 
-uint8_t GetInstanceIdxSwitch2(void)
+uint8_t GetInstanceIdxLc(void)
 {
-    return LightLcClient2InstanceIdx;
+    return LightLcClientInstanceIdx;
 }
 
 void SetupSwitch(void)
@@ -266,7 +263,7 @@ void LoopSwitch(void)
     {
         On1 = false;
         INFO("Generic ON 1\n");
-        Mesh_SendGenericOnOffSet(LightLcClient1InstanceIdx,
+        Mesh_SendGenericOnOffSet(LightLcClientInstanceIdx,
                                  GENERIC_ON,
                                  ON_OFF_TRANSITION_TIME_MS,
                                  ON_OFF_DELAY_TIME_MS,
@@ -278,7 +275,7 @@ void LoopSwitch(void)
     {
         Off1 = false;
         INFO("Generic OFF 1\n");
-        Mesh_SendGenericOnOffSet(LightLcClient1InstanceIdx,
+        Mesh_SendGenericOnOffSet(LightLcClientInstanceIdx,
                                  GENERIC_OFF,
                                  ON_OFF_TRANSITION_TIME_MS,
                                  ON_OFF_DELAY_TIME_MS,
@@ -290,7 +287,7 @@ void LoopSwitch(void)
     {
         On2 = false;
         INFO("Generic ON 2\n");
-        Mesh_SendGenericOnOffSet(LightLcClient2InstanceIdx,
+        Mesh_SendGenericOnOffSet(LightCtlClientInstanceIdx,
                                  GENERIC_ON,
                                  ON_OFF_TRANSITION_TIME_MS,
                                  ON_OFF_DELAY_TIME_MS,
@@ -302,7 +299,7 @@ void LoopSwitch(void)
     {
         Off2 = false;
         INFO("Generic OFF 2\n");
-        Mesh_SendGenericOnOffSet(LightLcClient2InstanceIdx,
+        Mesh_SendGenericOnOffSet(LightCtlClientInstanceIdx,
                                  GENERIC_OFF,
                                  ON_OFF_TRANSITION_TIME_MS,
                                  ON_OFF_DELAY_TIME_MS,
@@ -318,7 +315,7 @@ void LoopSwitch(void)
         LCD_Reinit();
     }
 
-    static unsigned long last_message_time = ULONG_MAX;
+    static int long last_message_time = ULONG_MAX;
 
     long encoder_pos;
     encoder_pos = DeltaEncoder.read();
@@ -335,7 +332,7 @@ void LoopSwitch(void)
                 delta = 0;
 
             delta += encoder_pos;
-            Mesh_SendGenericDeltaSet(LightLcClient1InstanceIdx,
+            Mesh_SendGenericDeltaSet(LightLcClientInstanceIdx,
                                      DELTA_STEP_VALUE * delta,
                                      DELTA_TRANSITION_TIME_MS,
                                      DELTA_DELAY_TIME_MS,
@@ -353,19 +350,19 @@ void LoopSwitch(void)
         }
     }
 
-    if (last_message_time + LIGHTNESS_INTVL_MS <= millis())
+    if (last_message_time + GENERIC_LEVEL_INTVL_MS <= millis())
     {
-        uint16_t lightness_actual = LightnessGet();
-        if (HasLightnessChanged(lightness_actual))
+        int16_t gen_level = GenericLevelGet();
+        if (HasGenLevelChanged(gen_level))
         {
-            INFO("lightness changed");
-            PrintLightness(lightness_actual);
-            Mesh_SendLightLightnessSet(LightLcClient1InstanceIdx,
-                                       lightness_actual,
-                                       LIGHT_LIGHTNESS_TRANSITION_TIME_MS,
-                                       LIGHT_LIGHTNESS_DELAY_TIME_MS,
-                                       LIGHT_LIGHTNESS_NUMBER_OF_REPEATS,
-                                       true);
+            INFO("Temperature changed");
+            PrintGenericLevelTemperature(gen_level);
+            Mesh_SendGenericLevelSet(LightCtlClientInstanceIdx,
+                                     gen_level,
+                                     GENERIC_LEVEL_TRANSITION_TIME_MS,
+                                     GENERIC_LEVEL_DELAY_TIME_MS,
+                                     GENERIC_LEVEL_NUMBER_OF_REPEATS,
+                                     true);
 
             last_message_time = millis();
         }

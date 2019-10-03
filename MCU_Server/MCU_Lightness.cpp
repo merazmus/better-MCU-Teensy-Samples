@@ -28,7 +28,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "Config.h"
 #include "Mesh.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 #define PWM_OUTPUT_MAX UINT16_MAX
@@ -91,11 +91,11 @@ static inline uint32_t ConvertLightnessActualToLinear(uint16_t val);
 static void DimmInterrupt(void);
 
 /*
- *  Calculate current transition value
+ *  Calculate present transition value
  *
  *  @param p_transition     Pointer to transition
  */
-static uint16_t GetCurrentValue(Transition *p_transition);
+static uint16_t GetPresentValue(Transition *p_transition);
 
 /*
  *  Calculate slope ans sets PWM output to specific lightness
@@ -107,12 +107,12 @@ static void SetLightnessOutput(uint16_t val);
 /*
  *  Calculate new transition
  *
- *  @param current          Current value
+ *  @param present          Present value
  *  @param target           Target value
  *  @param transition_time  Transition time
  *  @param p_transition     Pointer to transition
  */
-static void UpdateTransition(uint16_t current, uint16_t target, uint32_t transition_time, Transition *p_transition);
+static void UpdateTransition(uint16_t present, uint16_t target, uint32_t transition_time, Transition *p_transition);
 
 
 static Transition Light = {
@@ -123,8 +123,8 @@ static Transition Light = {
 };
 
 static Transition Temperature = {
-    .target_value    = 0,
-    .start_value     = UINT16_MAX / 2,
+    .target_value    = (LIGHT_CTL_TEMP_RANGE_MAX - LIGHT_CTL_TEMP_RANGE_MIN) / 2 + LIGHT_CTL_TEMP_RANGE_MIN,
+    .start_value     = LIGHT_CTL_TEMP_RANGE_MIN,
     .start_timestamp = 0,
     .transition_time = 0,
 };
@@ -145,11 +145,11 @@ static void DimmInterrupt(void)
 {
     if (!AttentionLedState)
     {
-        SetLightnessOutput(GetCurrentValue(&Light));
+        SetLightnessOutput(GetPresentValue(&Light));
     }
 }
 
-static uint16_t GetCurrentValue(Transition *p_transition)
+static uint16_t GetPresentValue(Transition *p_transition)
 {
     uint32_t time       = millis();
     uint32_t delta_time = time - p_transition->start_timestamp;
@@ -171,6 +171,7 @@ static void SetLightnessOutput(uint16_t val)
     const uint32_t coefficient = ((uint32_t)(PWM_OUTPUT_MAX - PWM_OUTPUT_MIN) * UINT16_MAX) /
                                  (LIGHTNESS_MAX - LIGHTNESS_MIN);
     uint32_t pwm_out;
+
     if (val == 0)
     {
         pwm_out = 0;
@@ -188,13 +189,13 @@ static void SetLightnessOutput(uint16_t val)
         uint64_t warm;
         uint64_t cold;
 
-        uint16_t temperature = GetCurrentValue(&Temperature);
+        uint16_t temperature = GetPresentValue(&Temperature);
 
-        cold = temperature * pwm_out;
-        cold /= UINT16_MAX;
+        cold = (LIGHT_CTL_TEMP_RANGE_MAX - temperature) * pwm_out;
+        cold /= LIGHT_CTL_TEMP_RANGE_MAX - LIGHT_CTL_TEMP_RANGE_MIN;
 
-        warm = (UINT16_MAX - temperature) * pwm_out;
-        warm /= UINT16_MAX;
+        warm = (temperature - LIGHT_CTL_TEMP_RANGE_MIN) * pwm_out;
+        warm /= LIGHT_CTL_TEMP_RANGE_MAX - LIGHT_CTL_TEMP_RANGE_MIN;
 
         analogWrite(PIN_PWM_WARM, warm);
         analogWrite(PIN_PWM_COLD, cold);
@@ -206,10 +207,10 @@ static void SetLightnessOutput(uint16_t val)
     }
 }
 
-static void UpdateTransition(uint16_t current, uint16_t target, uint32_t transition_time, Transition *p_transition)
+static void UpdateTransition(uint16_t present, uint16_t target, uint32_t transition_time, Transition *p_transition)
 {
     noInterrupts();
-    p_transition->start_value     = current;
+    p_transition->start_value     = present;
     p_transition->target_value    = target;
     p_transition->transition_time = transition_time;
     p_transition->start_timestamp = millis();
@@ -218,7 +219,7 @@ static void UpdateTransition(uint16_t current, uint16_t target, uint32_t transit
 
 static void PerformStartupSequenceIfNeeded(void)
 {
-    static DeviceStartupSequence_T current_startup_sequence_stage = DEVICE_SEQUENCE_STAGE_OFF;
+    static DeviceStartupSequence_T present_startup_sequence_stage = DEVICE_SEQUENCE_STAGE_OFF;
     static long                    sequence_start                 = UINT32_MAX;
     uint16_t                       startup_sequence_lightness[]   = {DEVICE_STARTUP_SEQ_STAGE_1_LIGHTNESS,
                                              DEVICE_STARTUP_SEQ_STAGE_2_LIGHTNESS,
@@ -231,20 +232,20 @@ static void PerformStartupSequenceIfNeeded(void)
     {
         sequence_start                  = millis();
         UnprovisionedSequenceEnableFlag = false;
-        current_startup_sequence_stage  = DEVICE_SEQUENCE_STAGE_1;
+        present_startup_sequence_stage  = DEVICE_SEQUENCE_STAGE_1;
 
-        ProcessTargetLightness(0, startup_sequence_lightness[current_startup_sequence_stage], 0);
+        ProcessTargetLightness(0, startup_sequence_lightness[present_startup_sequence_stage], 0);
     }
 
     unsigned long           sequence_duration = millis() - sequence_start;
     DeviceStartupSequence_T calculated_stage  = (DeviceStartupSequence_T)(sequence_duration /
                                                                          DEVICE_STARTUP_SEQ_STAGE_DURATION_MS);
 
-    if (current_startup_sequence_stage != DEVICE_SEQUENCE_STAGE_OFF &&
-        current_startup_sequence_stage != calculated_stage)
+    if (present_startup_sequence_stage != DEVICE_SEQUENCE_STAGE_OFF &&
+        present_startup_sequence_stage != calculated_stage)
     {
-        current_startup_sequence_stage = calculated_stage;
-        ProcessTargetLightness(0, startup_sequence_lightness[current_startup_sequence_stage], 0);
+        present_startup_sequence_stage = calculated_stage;
+        ProcessTargetLightness(0, startup_sequence_lightness[present_startup_sequence_stage], 0);
     }
 }
 
@@ -281,24 +282,24 @@ void IndicateAttentionLightness(bool attention_state, bool led_state)
     AttentionLedState = attention_state;
 }
 
-void ProcessTargetLightness(uint16_t current, uint16_t target, uint32_t transition_time)
+void ProcessTargetLightness(uint16_t present, uint16_t target, uint32_t transition_time)
 {
     if (!IsEnabled)
         return;
 
-    INFO("Lightness: %d -> %d, transition_time %d\n", current, target, transition_time);
+    INFO("Lightness: %d -> %d, transition_time %d\n", present, target, transition_time);
 
-    UpdateTransition(current, target, transition_time, &Light);
+    UpdateTransition(present, target, transition_time, &Light);
 }
 
-void ProcessTargetLightnessTemp(uint16_t current, uint16_t target, uint32_t transition_time)
+void ProcessTargetLightnessTemp(uint16_t present, uint16_t target, uint32_t transition_time)
 {
     if (!IsEnabled)
         return;
 
-    INFO("Temperature: %d-> %d, transition_time %d\n", current, target, transition_time);
+    INFO("Temperature: %d-> %d, transition_time %d\n", present, target, transition_time);
 
-    UpdateTransition(current, target, transition_time, &Temperature);
+    UpdateTransition(present, target, transition_time, &Temperature);
 }
 
 void SetupLightnessServer(void)

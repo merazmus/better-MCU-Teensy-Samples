@@ -25,7 +25,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Arduino.h"
 #include "Config.h"
 #include "LiquidCrystal_I2C.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 #define LCD_SCREEN_SWITCH_INTV_MS 5000 /**< Defines LCD screen switch interval. */
@@ -507,8 +507,6 @@ static void ScreenIterate(void)
         LCD_CurrentScreen = (ScreenType_T)(LCD_CurrentScreen + 1);
     if (LCD_CurrentScreen > SCREEN_TYPE_LAST)
         LCD_CurrentScreen = SCREEN_TYPE_FIRST;
-    if (LCD_DfuInProgress)
-        LCD_CurrentScreen = SCREEN_TYPE_DFU;
 
     LCD_CurrentScreenTimestamp = millis();
 }

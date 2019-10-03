@@ -31,11 +31,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "MCU_Sensor.h"
 #include "Mesh.h"
 #include "SDM.h"
-#include "UART.h"
-
-
-#define CTL_TEMPERATURE_RANGE_PLACEHOLDER 0
-
+#include "UARTProtocol.h"
 
 enum ModemState_t
 {
@@ -51,10 +47,10 @@ static const uint8_t ctl_registration[] = {
     lowByte(MESH_MODEL_ID_LIGHT_CTL_SERVER),
     highByte(MESH_MODEL_ID_LIGHT_CTL_SERVER),
 
-    CTL_TEMPERATURE_RANGE_PLACEHOLDER,
-    CTL_TEMPERATURE_RANGE_PLACEHOLDER,
-    CTL_TEMPERATURE_RANGE_PLACEHOLDER,
-    CTL_TEMPERATURE_RANGE_PLACEHOLDER,
+    lowByte(LIGHT_CTL_TEMP_RANGE_MIN),
+    highByte(LIGHT_CTL_TEMP_RANGE_MIN),
+    lowByte(LIGHT_CTL_TEMP_RANGE_MAX),
+    highByte(LIGHT_CTL_TEMP_RANGE_MAX),
 };
 
 static const uint8_t lightness_registration[] = {
@@ -506,21 +502,18 @@ void loop(void)
 {
     UART_ProcessIncomingCommand();
 
-    if (!MCU_DFU_IsInProgress())
+    LoopHealth();
+    if (!IsTestInProgress())
     {
-        LoopHealth();
-        if (!IsTestInProgress())
-        {
-            // Health and Attention shares Status LED
-            LoopAttention();
-        }
+        // Health and Attention shares Status LED
+        LoopAttention();
+    }
 
-        LoopLightnessServer();
-        LoopSDM();
+    LoopLightnessServer();
+    LoopSDM();
 
-        if (MODEM_STATE_NODE == ModemState)
-        {
-            LoopSensorServer();
-        }
+    if (MODEM_STATE_NODE == ModemState)
+    {
+        LoopSensorServer();
     }
 }

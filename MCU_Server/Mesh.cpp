@@ -24,7 +24,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "Arduino.h"
 #include "Config.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 /**
@@ -36,6 +36,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define MESH_MESSAGE_LIGHT_LIGHTNESS_STATUS 0x824E
 #define MESH_MESSAGE_SENSOR_STATUS 0x0052
 #define MESH_MESSAGE_LEVEL_STATUS 0x8208
+#define MESH_MESSAGE_LIGHT_CTL_TEMPERATURE_STATUS 0x8266
 #define MESH_MESSAGE_LEVEL_GET 0x8205
 
 /**
@@ -90,6 +91,14 @@ static void MeshInternal_ProcessLightLightnessStatus(uint8_t *p_payload, size_t 
  */
 static void MeshInternal_ProcessLevelStatus(uint8_t *p_payload, size_t len);
 
+/*
+ *  Process Light CTL Status mesh message
+ *
+ *  @param * p_payload   Pointer mesh message payload
+ *  @param len           Payload length
+ */
+static void MeshInternal_ProcessLightCTLTemperatureStatus(uint8_t *p_payload, size_t len);
+
 
 bool Mesh_IsModelAvailable(uint8_t *p_payload, uint8_t len, uint16_t expected_model_id)
 {
@@ -125,6 +134,11 @@ void Mesh_ProcessMeshCommand(uint8_t *p_payload, size_t len)
         case MESH_MESSAGE_LEVEL_STATUS:
         {
             MeshInternal_ProcessLevelStatus(p_payload + index, len - index);
+            break;
+        }
+        case MESH_MESSAGE_LIGHT_CTL_TEMPERATURE_STATUS:
+        {
+            MeshInternal_ProcessLightCTLTemperatureStatus(p_payload + index, len - index);
             break;
         }
     }
@@ -203,9 +217,50 @@ static void MeshInternal_ProcessLevelStatus(uint8_t *p_payload, size_t len)
         transition_time_ms = 0;
     }
 
-    uint16_t current_temp = present_value - INT16_MIN;
-    uint16_t target_temp  = target_value - INT16_MIN;
-    ProcessTargetLightnessTemp(current_temp, target_temp, transition_time_ms);
+    uint16_t present_lightness = present_value - INT16_MIN;
+    uint16_t target_lightness  = target_value - INT16_MIN;
+
+    ProcessTargetLightness(present_lightness, target_lightness, transition_time_ms);
+}
+
+static void MeshInternal_ProcessLightCTLTemperatureStatus(uint8_t *p_payload, size_t len)
+{
+    size_t   index = 0;
+    uint16_t present_temperature;
+    uint16_t present_delta_uv;
+    uint16_t target_temperature;
+    uint16_t target_delta_uv;
+    uint32_t transition_time_ms;
+
+    present_temperature = ((uint16_t)p_payload[index++]);
+    present_temperature |= ((uint16_t)p_payload[index++] << 8);
+
+    present_delta_uv = ((uint16_t)p_payload[index++]);
+    present_delta_uv |= ((uint16_t)p_payload[index++] << 8);
+
+    if (index < len)
+    {
+        target_temperature = ((uint16_t)p_payload[index++]);
+        target_temperature |= ((uint16_t)p_payload[index++] << 8);
+
+        target_delta_uv = ((uint16_t)p_payload[index++]);
+        target_delta_uv |= ((uint16_t)p_payload[index++] << 8);
+
+        bool is_valid = MeshInternal_ConvertFromMeshFormatToMsTransitionTime(p_payload[index++], &transition_time_ms);
+        if (!is_valid)
+        {
+            INFO("Rejected Transition Time\n");
+            return;
+        }
+    }
+    else
+    {
+        target_temperature = present_temperature;
+        target_delta_uv    = present_delta_uv;
+        transition_time_ms = 0;
+    }
+
+    ProcessTargetLightnessTemp(present_temperature, target_temperature, transition_time_ms);
 }
 
 static bool MeshInternal_ConvertFromMeshFormatToMsTransitionTime(uint8_t time_mesh_format, uint32_t *p_time_ms)

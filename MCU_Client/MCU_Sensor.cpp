@@ -31,7 +31,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Arduino.h"
 #include "Config.h"
 #include "LCD.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 static uint8_t SensorClientIdx = INSTANCE_INDEX_UNKNOWN;

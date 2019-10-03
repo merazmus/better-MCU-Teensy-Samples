@@ -37,7 +37,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define DEBUG_INTERFACE (Serial)        /**< Defines serial port to print debug messages. */
 #define DEBUG_INTERFACE_BAUDRATE 115200 /**< Defines baudrate of debug interface. */
-#define UART_INTERFACE (Serial2)        /**< Defines serial port to communicate with modem. */
 #define UART_INTERFACE_BAUDRATE 57600   /**< Defines baudrate of modem interface. */
 
 #define PIN_LED_1 11      /**< Defines led 1 pin. */

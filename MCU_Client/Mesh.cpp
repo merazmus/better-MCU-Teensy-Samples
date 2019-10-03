@@ -24,7 +24,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "Arduino.h"
 #include "Config.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 /**
@@ -62,6 +62,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define MESH_MESSAGE_GENERIC_ONOFF_SET_LEN 8
 #define MESH_MESSAGE_LIGHT_LIGHTNESS_SET_LEN 9
 #define MESH_MESSAGE_GENERIC_DELTA_SET_LEN 11
+#define MESH_MESSAGE_GENERIC_LEVEL_SET_LEN 9
 
 /*
  * Mesh time conversion definitions
@@ -97,6 +98,7 @@ typedef enum
     GENERIC_ON_OFF_SET_MSG,
     GENERIC_DELTA_SET_MSG,
     LIGHT_LIGHTNESS_SET_MSG,
+    GENERIC_LEVEL_SET_MSG
 } MsgType_T;
 
 typedef struct
@@ -122,6 +124,14 @@ typedef struct
     uint8_t  transition_time;
     uint8_t  delay;
 } LightLightnessSetMsg_T;
+
+typedef struct
+{
+    int16_t value;
+    uint8_t tid;
+    uint8_t transition_time;
+    uint8_t delay;
+} GenericLevelSetMsg_T;
 
 typedef struct
 {
@@ -155,6 +165,17 @@ static void MeshInternal_SendGenericOnOffSet(uint8_t instance_idx, GenericOnOffS
  *  @param is_new            Is it a new transation?
  */
 static void MeshInternal_SendLightLightnessSet(uint8_t instance_idx, LightLightnessSetMsg_T *message);
+
+/*
+ *  Send Generic Level Set message
+ *
+ *  @param instance_idx      Instance index
+ *  @param value             Generic Level value
+ *  @param transition_time   Transition time (mesh format)
+ *  @param delay_ms          Delay in miliseconds
+ *  @param is_new            Is it a new transation?
+ */
+static void MeshInternal_SendGenericLevelSet(uint8_t instance_idx, GenericLevelSetMsg_T *message);
 
 /*
  *  Send Generic Delta Set message
@@ -320,6 +341,15 @@ void Mesh_Loop(void)
                 MeshMsgsQueue[i] = NULL;
                 break;
             }
+            case GENERIC_LEVEL_SET_MSG:
+            {
+                MeshInternal_SendGenericLevelSet(MeshMsgsQueue[i]->instance_idx,
+                                                 (GenericLevelSetMsg_T *)MeshMsgsQueue[i]->mesh_msg);
+                free(MeshMsgsQueue[i]->mesh_msg);
+                free(MeshMsgsQueue[i]);
+                MeshMsgsQueue[i] = NULL;
+                break;
+            }
         }
     }
 }
@@ -399,6 +429,43 @@ void Mesh_SendLightLightnessSet(uint8_t  instance_idx,
     }
 }
 
+void Mesh_SendGenericLevelSet(uint8_t  instance_idx,
+                              uint16_t value,
+                              unsigned transition_time,
+                              unsigned delay_ms,
+                              uint8_t  num_of_repeats,
+                              bool     is_new_transaction)
+{
+    static uint8_t tid = 0;
+
+    if (is_new_transaction)
+        tid++;
+
+    for (int i = 0; i <= num_of_repeats; i++)
+    {
+        GenericLevelSetMsg_T *p_msg = (GenericLevelSetMsg_T *)calloc(1, sizeof(GenericLevelSetMsg_T));
+        p_msg->value                = value;
+        p_msg->tid                  = tid;
+        p_msg->transition_time      = MeshInternal_ConvertFromMsToMeshFormat(transition_time);
+        p_msg->delay = ((num_of_repeats - i) * MESH_REPEATS_INTERVAL_MS + delay_ms) / MESH_DELAY_TIME_STEP_MS;
+
+        EnqueuedMsg_T *p_enqueued_msg = (EnqueuedMsg_T *)calloc(1, sizeof(EnqueuedMsg_T));
+        p_enqueued_msg->instance_idx  = instance_idx;
+        p_enqueued_msg->mesh_msg      = p_msg;
+        p_enqueued_msg->dispatch_time = millis() + i * MESH_REPEATS_INTERVAL_MS;
+        p_enqueued_msg->msg_type      = GENERIC_LEVEL_SET_MSG;
+
+        for (int i = 0; i < MESH_MESSAGES_QUEUE_LENGTH; i++)
+        {
+            if (MeshMsgsQueue[i] == NULL)
+            {
+                MeshMsgsQueue[i] = p_enqueued_msg;
+                break;
+            }
+        }
+    }
+}
+
 void Mesh_SendGenericDeltaSet(uint8_t  instance_idx,
                               int32_t  value,
                               unsigned transition_time,
@@ -465,6 +532,24 @@ static void MeshInternal_SendLightLightnessSet(uint8_t instance_idx, LightLightn
     buf[index++] = highByte(MESH_MESSAGE_LIGHT_LIGHTNESS_SET_UNACKNOWLEDGED);
     buf[index++] = lowByte(message->lightness);
     buf[index++] = highByte(message->lightness);
+    buf[index++] = message->tid;
+    buf[index++] = message->transition_time;
+    buf[index++] = message->delay;
+
+    UART_SendMeshMessageRequest(buf, sizeof(buf));
+}
+
+static void MeshInternal_SendGenericLevelSet(uint8_t instance_idx, GenericLevelSetMsg_T *message)
+{
+    uint8_t buf[MESH_MESSAGE_GENERIC_LEVEL_SET_LEN];
+    size_t  index = 0;
+
+    buf[index++] = instance_idx;
+    buf[index++] = 0x00;
+    buf[index++] = lowByte(MESH_MESSAGE_GENERIC_LEVEL_SET_UNACKNOWLEDGED);
+    buf[index++] = highByte(MESH_MESSAGE_GENERIC_LEVEL_SET_UNACKNOWLEDGED);
+    buf[index++] = lowByte(message->value);
+    buf[index++] = highByte(message->value);
     buf[index++] = message->tid;
     buf[index++] = message->transition_time;
     buf[index++] = message->delay;

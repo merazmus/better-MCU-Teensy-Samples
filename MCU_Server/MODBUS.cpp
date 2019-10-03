@@ -24,7 +24,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "CRC.h"
 #include "Config.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 #define MIN_RX_MODBUS_MESSAGE_LEN 4u

@@ -25,7 +25,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Arduino.h"
 #include "Config.h"
 #include "MCU_Lightness.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 static bool     AttentionState;

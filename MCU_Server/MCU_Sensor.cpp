@@ -29,7 +29,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Config.h"
 #include "Mesh.h"
 #include "SDM.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 #define PIN_PIR 5  /**< Defines PIR sensor location */

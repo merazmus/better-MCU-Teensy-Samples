@@ -36,6 +36,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define MESH_MODEL_ID_GENERIC_LEVEL_CLIENT 0x1003
 #define MESH_MODEL_ID_LIGHT_LIGHTNESS_CLIENT 0x1302
 #define MESH_MODEL_ID_LIGHT_LC_CLIENT 0x1311
+#define MESH_MODEL_ID_LIGHT_CTL_CLIENT 0x1305
 
 
 /*
@@ -107,6 +108,23 @@ void Mesh_SendLightLightnessSet(uint8_t  instance_idx,
  */
 void Mesh_SendGenericDeltaSet(uint8_t  instance_idx,
                               int32_t  value,
+                              unsigned transition_time,
+                              unsigned delay_ms,
+                              uint8_t  num_of_repeats,
+                              bool     is_new_transaction);
+
+/*
+ *  Send Generic Level Set Unacknowledged message with repeats.
+ *
+ *  @param instance_idx        Instance index.
+ *  @param value               Generic Level target value.
+ *  @param transition_time     Transition time (mesh format).
+ *  @param delay_ms            Delay in miliseconds.
+ *  @param num_of_repeats      Number of message repeats.
+ *  @param is_new_transaction  Is it a new transaction?
+ */
+void Mesh_SendGenericLevelSet(uint8_t  instance_idx,
+                              uint16_t value,
                               unsigned transition_time,
                               unsigned delay_ms,
                               uint8_t  num_of_repeats,

@@ -31,7 +31,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "MCU_Sensor.h"
 #include "MCU_Switch.h"
 #include "Mesh.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 static ModemState_t ModemState        = MODEM_STATE_UNKNOWN;
@@ -141,8 +141,8 @@ void ProcessEnterInitDevice(uint8_t *p_payload, uint8_t len)
     LCD_UpdateModemState(ModemState);
     AttentionStateSet(false);
 
-    SetInstanceIdxSwitch1(INSTANCE_INDEX_UNKNOWN);
-    SetInstanceIdxSwitch2(INSTANCE_INDEX_UNKNOWN);
+    SetInstanceIdxCtl(INSTANCE_INDEX_UNKNOWN);
+    SetInstanceIdxLc(INSTANCE_INDEX_UNKNOWN);
     SetInstanceIdxSensor(INSTANCE_INDEX_UNKNOWN);
 
     if (!Mesh_IsModelAvailable(p_payload, len, MESH_MODEL_ID_LIGHT_LC_CLIENT))
@@ -158,12 +158,12 @@ void ProcessEnterInitDevice(uint8_t *p_payload, uint8_t len)
     }
 
     uint8_t model_ids[] = {
-        // First Light Lightness controller client
+        // Light Lightness controller client
         lowByte(MESH_MODEL_ID_LIGHT_LC_CLIENT),
         highByte(MESH_MODEL_ID_LIGHT_LC_CLIENT),
-        // Second Light Lightness controller client
-        lowByte(MESH_MODEL_ID_LIGHT_LC_CLIENT),
-        highByte(MESH_MODEL_ID_LIGHT_LC_CLIENT),
+        // Light CTL client
+        lowByte(MESH_MODEL_ID_LIGHT_CTL_CLIENT),
+        highByte(MESH_MODEL_ID_LIGHT_CTL_CLIENT),
         // Sensor client
         lowByte(MESH_MODEL_ID_SENSOR_CLIENT),
         highByte(MESH_MODEL_ID_SENSOR_CLIENT),
@@ -188,8 +188,8 @@ void ProcessEnterInitNode(uint8_t *p_payload, uint8_t len)
     LCD_UpdateModemState(ModemState);
     AttentionStateSet(false);
 
-    SetInstanceIdxSwitch1(INSTANCE_INDEX_UNKNOWN);
-    SetInstanceIdxSwitch2(INSTANCE_INDEX_UNKNOWN);
+    SetInstanceIdxCtl(INSTANCE_INDEX_UNKNOWN);
+    SetInstanceIdxLc(INSTANCE_INDEX_UNKNOWN);
     SetInstanceIdxSensor(INSTANCE_INDEX_UNKNOWN);
 
     for (size_t index = 0; index < len;)
@@ -200,35 +200,33 @@ void ProcessEnterInitNode(uint8_t *p_payload, uint8_t len)
 
         if (MESH_MODEL_ID_LIGHT_LC_CLIENT == model_id)
         {
-            if (GetInstanceIdxSwitch1() == INSTANCE_INDEX_UNKNOWN)
-            {
-                SetInstanceIdxSwitch1(current_model_id_instance_index);
-            }
-            else
-            {
-                SetInstanceIdxSwitch2(current_model_id_instance_index);
-            }
+            SetInstanceIdxLc(current_model_id_instance_index);
         }
 
         if (MESH_MODEL_ID_SENSOR_CLIENT == model_id)
         {
             SetInstanceIdxSensor(current_model_id_instance_index);
         }
+
+        if (MESH_MODEL_ID_LIGHT_CTL_CLIENT == model_id)
+        {
+            SetInstanceIdxCtl(current_model_id_instance_index);
+        }
     }
 
-    if (GetInstanceIdxSwitch1() == INSTANCE_INDEX_UNKNOWN)
+    if (GetInstanceIdxLc() == INSTANCE_INDEX_UNKNOWN)
     {
         ModemState = MODEM_STATE_UNKNOWN;
         LCD_UpdateModemState(ModemState);
-        INFO("First Light Lightness Controller Client model id not found in init node message\n");
+        INFO("Light Lightness Controller Client model id not found in init node message\n");
         return;
     }
 
-    if (GetInstanceIdxSwitch2() == INSTANCE_INDEX_UNKNOWN)
+    if (GetInstanceIdxCtl() == INSTANCE_INDEX_UNKNOWN)
     {
         ModemState = MODEM_STATE_UNKNOWN;
         LCD_UpdateModemState(ModemState);
-        INFO("Second Light Lightness Controller Client model id not found in init node message\n");
+        INFO("Light CTL Client model id not found in init node message\n");
         return;
     }
 
@@ -325,10 +323,7 @@ void loop()
                 LCD_UpdateDfuState(LastDfuInProgress);
             }
 
-            if (!MCU_DFU_IsInProgress())
-            {
-                LoopSwitch();
-            }
+            LoopSwitch();
             break;
     }
 }

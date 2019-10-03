@@ -28,7 +28,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Config.h"
 #include "Flasher.h"
 #include "LCD.h"
-#include "UART.h"
+#include "UARTProtocol.h"
 
 
 #define SHA256_SIZE 32u
@@ -306,7 +306,6 @@ void ProcessDfuPageStoreRequest(uint8_t *p_payload, uint8_t len)
 
     uint8_t response[] = {DFU_FIRMWARE_SUCCESSFULLY_UPDATED};
     UART_SendDfuPageStoreResponse(response, sizeof(response));
-    UART_Flush();
 
     INFO("DFU Firmware updated\n");
     DEBUG_INTERFACE.flush();
