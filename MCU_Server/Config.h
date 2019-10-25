@@ -36,11 +36,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define DFU_VALIDATION_STRING "server" /**< Defines string to be expected in app data */
 
 #define INSTANCE_INDEX_UNKNOWN UINT8_MAX /**< Defines unknown instance index value */
-#define ANALOG_MIN 0                     /**< Defines lower range of analog measurements. */
-#define ANALOG_MAX 1023                  /**< Defines uppper range of analog measurements. */
-#define ANALOG_REFERENCE_VOLTAGE_MV 3300 /**< Defines ADC reference voltage in millivolts */
-#define ATTENTION_TIME_MS 500            /**< Defines attention state change time in milliseconds. */
-#define TEST_TIME_MS 1500                /**< Defines fake test duration in milliseconds. */
+
+#define ATTENTION_TIME_MS 500 /**< Defines attention state change time in milliseconds. */
+#define TEST_TIME_MS 1500     /**< Defines fake test duration in milliseconds. */
 
 #define DEBUG_INTERFACE (Serial)        /**< Defines serial port to print debug messages */
 #define DEBUG_INTERFACE_BAUDRATE 115200 /**< Defines baudrate of debug interface */

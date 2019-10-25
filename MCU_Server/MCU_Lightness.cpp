@@ -44,17 +44,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define DIMM_INTERRUPT_TIME_MS 5u /**< Dimming control interrupt interval definition [ms]. */
 #define DIMM_INTERRUPT_TIME_US (DIMM_INTERRUPT_TIME_MS * 1000)
 #define POW(a) ((a) * (a))
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define ATTENTION_LIGHTNESS_ON 0xFFFF
 #define ATTENTION_LIGHTNESS_OFF (0xFFFF * 4 / 10)
 
-#define DEVICE_STARTUP_SEQ_STAGE_DURATION_MS 300
-#define DEVICE_STARTUP_SEQ_STAGE_1_LIGHTNESS 0xFFFF
-#define DEVICE_STARTUP_SEQ_STAGE_2_LIGHTNESS 0x0000
+#define DEVICE_STARTUP_SEQ_STAGE_1_DURATION_MS 3000
+#define DEVICE_STARTUP_SEQ_STAGE_2_DURATION_MS 1000
+#define DEVICE_STARTUP_SEQ_STAGE_3_DURATION_MS 1000
+#define DEVICE_STARTUP_SEQ_STAGE_4_DURATION_MS 1000
+
+#define DEVICE_STARTUP_SEQ_STAGE_1_LIGHTNESS 0x7FFF
+#define DEVICE_STARTUP_SEQ_STAGE_2_LIGHTNESS 0x0001
 #define DEVICE_STARTUP_SEQ_STAGE_3_LIGHTNESS 0xFFFF
-#define DEVICE_STARTUP_SEQ_STAGE_4_LIGHTNESS 0x0000
-#define DEVICE_STARTUP_SEQ_STAGE_5_LIGHTNESS 0x7FFF
-#define DEVICE_STARTUP_SEQ_STAGE_6_LIGHTNESS 0x0000
+#define DEVICE_STARTUP_SEQ_STAGE_4_LIGHTNESS 0x0001
 #define DEVICE_STARTUP_SEQ_STAGE_OFF_LIGHTNESS 0xFFFF
 
 
@@ -72,8 +75,6 @@ typedef enum
     DEVICE_SEQUENCE_STAGE_2,
     DEVICE_SEQUENCE_STAGE_3,
     DEVICE_SEQUENCE_STAGE_4,
-    DEVICE_SEQUENCE_STAGE_5,
-    DEVICE_SEQUENCE_STAGE_6,
     DEVICE_SEQUENCE_STAGE_OFF,
 } DeviceStartupSequence_T;
 
@@ -114,6 +115,12 @@ static void SetLightnessOutput(uint16_t val);
  */
 static void UpdateTransition(uint16_t present, uint16_t target, uint32_t transition_time, Transition *p_transition);
 
+/*
+ *  Calculate current stage on Startup Sequence
+ *
+ *  @param time_since_sequence_start  time since the beginning of sequence
+ */
+static DeviceStartupSequence_T GetStartupSequenceStage(unsigned long time_since_sequence_start);
 
 static Transition Light = {
     .target_value    = 0,
@@ -217,6 +224,27 @@ static void UpdateTransition(uint16_t present, uint16_t target, uint32_t transit
     interrupts();
 }
 
+static DeviceStartupSequence_T GetStartupSequenceStage(unsigned long time_since_sequence_start)
+{
+    long startup_sequence_duration_ms[] = {DEVICE_STARTUP_SEQ_STAGE_1_DURATION_MS,
+                                           DEVICE_STARTUP_SEQ_STAGE_2_DURATION_MS,
+                                           DEVICE_STARTUP_SEQ_STAGE_3_DURATION_MS,
+                                           DEVICE_STARTUP_SEQ_STAGE_4_DURATION_MS};
+
+    for (size_t i = 0; i < ARRAY_SIZE(startup_sequence_duration_ms); i++)
+    {
+        if (time_since_sequence_start / startup_sequence_duration_ms[i] >= 1)
+        {
+            time_since_sequence_start -= startup_sequence_duration_ms[i];
+        }
+        else
+        {
+            return (DeviceStartupSequence_T)i;
+        }
+    }
+    return DEVICE_SEQUENCE_STAGE_OFF;
+}
+
 static void PerformStartupSequenceIfNeeded(void)
 {
     static DeviceStartupSequence_T present_startup_sequence_stage = DEVICE_SEQUENCE_STAGE_OFF;
@@ -225,8 +253,6 @@ static void PerformStartupSequenceIfNeeded(void)
                                              DEVICE_STARTUP_SEQ_STAGE_2_LIGHTNESS,
                                              DEVICE_STARTUP_SEQ_STAGE_3_LIGHTNESS,
                                              DEVICE_STARTUP_SEQ_STAGE_4_LIGHTNESS,
-                                             DEVICE_STARTUP_SEQ_STAGE_5_LIGHTNESS,
-                                             DEVICE_STARTUP_SEQ_STAGE_6_LIGHTNESS,
                                              DEVICE_STARTUP_SEQ_STAGE_OFF_LIGHTNESS};
     if (UnprovisionedSequenceEnableFlag)
     {
@@ -238,8 +264,7 @@ static void PerformStartupSequenceIfNeeded(void)
     }
 
     unsigned long           sequence_duration = millis() - sequence_start;
-    DeviceStartupSequence_T calculated_stage  = (DeviceStartupSequence_T)(sequence_duration /
-                                                                         DEVICE_STARTUP_SEQ_STAGE_DURATION_MS);
+    DeviceStartupSequence_T calculated_stage  = GetStartupSequenceStage(sequence_duration);
 
     if (present_startup_sequence_stage != DEVICE_SEQUENCE_STAGE_OFF &&
         present_startup_sequence_stage != calculated_stage)

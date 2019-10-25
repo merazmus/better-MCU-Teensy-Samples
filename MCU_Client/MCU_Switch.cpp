@@ -82,6 +82,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define GENERIC_LEVEL_DELAY_TIME_MS 0        /**< Defines default delay time */
 
 #define POT_DEADBAND 20 /**< Potentiometer deadband. About 2% of full range */
+#define ANALOG_MIN 0    /**< Defines lower range of analog measurements. */
+#define ANALOG_MAX 1023 /**< Defines uppper range of analog measurements. */
 
 
 static volatile bool On1                       = false; /**< Implies if Generic ON button has been pushed */
@@ -211,7 +213,20 @@ static int16_t GenericLevelGet(void)
 {
     uint16_t analog_measurement = analogRead(PIN_ANALOG);
 
-    return map(analog_measurement, ANALOG_MIN, ANALOG_MAX, GENERIC_LEVEL_MIN, GENERIC_LEVEL_MAX);
+    if (analog_measurement < ANALOG_MIN + POT_DEADBAND)
+    {
+        analog_measurement = ANALOG_MIN + POT_DEADBAND;
+    }
+    if (analog_measurement > ANALOG_MAX - POT_DEADBAND)
+    {
+        analog_measurement = ANALOG_MAX - POT_DEADBAND;
+    }
+
+    return map(analog_measurement,
+               ANALOG_MIN + POT_DEADBAND,
+               ANALOG_MAX - POT_DEADBAND,
+               GENERIC_LEVEL_MIN,
+               GENERIC_LEVEL_MAX);
 }
 
 static void PrintGenericLevelTemperature(int gen_level)

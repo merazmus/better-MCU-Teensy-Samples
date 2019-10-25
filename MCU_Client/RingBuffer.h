@@ -53,14 +53,13 @@ bool RingBuffer_QueueBytes(RingBuffer_T *p_ring_buffer, uint8_t *table, uint16_t
 bool RingBuffer_DequeueByte(RingBuffer_T *p_ring_buffer, uint8_t *read_byte);
 
 /*
- *  Inform Ring Buffer how many bytes were queued to it without using
- *  RingBuffer_QueueBytes (needed for DMA). 
+ *  Set RingBuffer wr index (needed for DMA).
  *
  *  @param p_ring_buffer  Pointer to ring buffer instance @def RingBuffer_T
  *  @param value          number of queued bytes
  *  @return               True if success, false if buffer is overflowed
  */
-bool RingBuffer_IncrementWrIndex(RingBuffer_T *p_ring_buffer, uint16_t value);
+void RingBuffer_SetWrIndex(RingBuffer_T *p_ring_buffer, uint16_t value);
 
 /*
  *  Inform Ring Buffer how many bytes were dequeued from it without using

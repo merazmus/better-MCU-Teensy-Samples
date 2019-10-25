@@ -2,7 +2,6 @@
 
 static bool     IsOverflow(RingBuffer_T *p_ring_buffer, uint16_t len);
 static uint16_t MaxQueueBufferLen(RingBuffer_T *p_ring_buffer, uint16_t table_len);
-static bool     IsFull(RingBuffer_T *p_ring_buffer);
 
 void RingBuffer_Init(RingBuffer_T *p_ring_buffer, uint8_t *p_buf_pointer, size_t buf_len)
 {
@@ -17,14 +16,9 @@ bool RingBuffer_isEmpty(RingBuffer_T *p_ring_buffer)
     return p_ring_buffer->wr == p_ring_buffer->rd;
 }
 
-bool RingBuffer_IncrementWrIndex(RingBuffer_T *p_ring_buffer, uint16_t value)
+void RingBuffer_SetWrIndex(RingBuffer_T *p_ring_buffer, uint16_t value)
 {
-    if (IsOverflow(p_ring_buffer, value))
-    {
-        return false;
-    }
-    p_ring_buffer->wr = (p_ring_buffer->wr + value) % p_ring_buffer->buf_len;
-    return true;
+    p_ring_buffer->wr = (value) % p_ring_buffer->buf_len;
 }
 
 void RingBuffer_IncrementRdIndex(RingBuffer_T *p_ring_buffer, uint16_t value)
@@ -64,7 +58,7 @@ bool RingBuffer_QueueBytes(RingBuffer_T *p_ring_buffer, uint8_t *table, uint16_t
         memcpy(p_ring_buffer->p_buf, &table[cpy_len], rest_of_table_len);
     }
 
-    RingBuffer_IncrementWrIndex(p_ring_buffer, table_len);
+    RingBuffer_SetWrIndex(p_ring_buffer, p_ring_buffer->wr + table_len);
 
     return true;
 }
@@ -108,9 +102,4 @@ static uint16_t MaxQueueBufferLen(RingBuffer_T *p_ring_buffer, uint16_t table_le
     {
         return table_len;
     }
-}
-
-static bool IsFull(RingBuffer_T *p_ring_buffer)
-{
-    return ((p_ring_buffer->wr + 1) % p_ring_buffer->buf_len) == p_ring_buffer->rd;
 }

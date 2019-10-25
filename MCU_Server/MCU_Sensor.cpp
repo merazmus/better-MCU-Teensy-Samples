@@ -43,6 +43,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define SENSOR_UPDATE_INTV_VOLT_CURR 1000  /**< Defines sensor update in milliseconds for Voltage and Current Sensor  */
 #define SENSOR_UPDATE_INTV_POW_ENERGY 1000 /**< Defines sensor update in milliseconds for Power and Energy Sensor  */
 #define ALS_REPORT_THRESHOLD 500           /**< Defines sensor threshold in centilux */
+#define ANALOG_REFERENCE_VOLTAGE_MV 3300   /**< Defines ADC reference voltage in millivolts */
+#define ANALOG_MIN 0                       /**< Defines lower range of analog measurements. */
+#define ANALOG_MAX 1023                    /**< Defines uppper range of analog measurements. */
 
 
 static bool              IsEnabled                = false;

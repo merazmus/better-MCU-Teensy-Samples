@@ -32,8 +32,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define LIGHTNESS_TEMP_MAX 0x4E20     /**< Defines upper range of light temperature */
 #define LIGHTNESS_TEMP_UNKNOWN 0xFFFF /**< Defines unknown  light temperature value */
 
-#define LIGHT_CTL_TEMP_RANGE_MIN 0x0320 /**< Min allowed color temperature of white light in Kelvin. */
-#define LIGHT_CTL_TEMP_RANGE_MAX 0x4E20 /**< Max allowed color temperature of white light in Kelvin. */
+#define LIGHT_CTL_TEMP_RANGE_MIN 2700 /**< Min allowed color temperature of white light in Kelvin. */
+#define LIGHT_CTL_TEMP_RANGE_MAX 6500 /**< Max allowed color temperature of white light in Kelvin. */
 
 /*
  *  Set Lightness Server instance index

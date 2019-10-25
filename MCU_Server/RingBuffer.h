@@ -53,7 +53,7 @@ bool RingBuffer_QueueBytes(RingBuffer_T *p_ring_buffer, uint8_t *table, uint16_t
 bool RingBuffer_DequeueByte(RingBuffer_T *p_ring_buffer, uint8_t *read_byte);
 
 /*
- *  Set RingBuffer wr index (needed for DMA). 
+ *  Set RingBuffer wr index (needed for DMA).
  *
  *  @param p_ring_buffer  Pointer to ring buffer instance @def RingBuffer_T
  *  @param value          number of queued bytes
